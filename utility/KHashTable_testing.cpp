@@ -1,7 +1,6 @@
 
 #include <gtest/gtest.h>
 #include <iostream>
-#include <gdsl.h>
 
 #include "KHashTable.h"
 #include "Tools.h"
