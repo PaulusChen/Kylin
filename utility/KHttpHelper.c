@@ -46,25 +46,31 @@ void KDistoryHttpHelper(KHttpHelper_t *helper) {
 
 int64_t KHttpHelperGetContentLen(KHttpHelper_t *helper) {
 
-    CURLcode reval = CURLE_OK;
+    KCheckInit(CURLcode,CURLE_OK);
 
+    CURL *hCurl = helper->pCurl;
     //curl_easy_setopt(hCurl,CURLOPT_HEADER,true);
     //curl_easy_setopt(hCurl,CURL_HEADERFUNCTION,_httpHelperHeaderParser);
     //curl_easy_setopt(hCurl,CURL_HEADERDATA,helper);
 
-    CURL *hCurl = helper->pCurl;
-    reval = curl_easy_perform(hCurl);
+    KCheckEQ(curl_easy_perform(hCurl),CURL_E);
 
     long responseCode = 0;
-    curl_easy_getinfo(hCurl,CURLINFO_RESPONSE_CODE,&responseCode);
+    KCheckEQ(curl_easy_getinfo(hCurl,CURLINFO_RESPONSE_CODE,&responseCode),CURL_E);
     if (responseCode != 200) {
         return  KE_UNKNOW;
     }
 
     double contentLen;
-    curl_easy_getinfo(hCurl,CURLINFO_CONTENT_LENGTH_DOWNLOAD,&contentLen);
+    KCheckEQ(curl_easy_getinfo(hCurl,
+                               CURLINFO_CONTENT_LENGTH_DOWNLOAD,
+                               &contentLen),CURL_E);
 
     return (int64_t)contentLen;
+
+CURL_E:
+    KLogErr("CUrl Error : %s",curl_easy_strerror(KCheckReval()));
+    return KE_3RD_PART_LIBS_ERROR;
 }
 
 typedef struct {
@@ -96,9 +102,12 @@ int KHttpHelperDownloadRange(KHttpHelper_t *helper,
                             uint64_t *len) {
     CURL *hCurl = helper->pCurl;
     double contentLen;
-    CURLcode reval = CURLE_OK;
 
-    reval = curl_easy_getinfo(hCurl,CURLINFO_CONTENT_LENGTH_DOWNLOAD,&contentLen);
+    KCheckInit(CURLcode,CURLE_OK);
+    KCheckEQ(curl_easy_getinfo(hCurl,
+                               CURLINFO_CONTENT_LENGTH_DOWNLOAD,
+                               &contentLen),
+             CURL_E);
 
     int64_t totalLen = 0;
     if (contentLen > 0.0) {
@@ -120,16 +129,23 @@ int KHttpHelperDownloadRange(KHttpHelper_t *helper,
 
     char rangStr[256];
     sprintf(rangStr,"%"PRIu64"-%"PRIu64,offset,offset + *len);
-    curl_easy_setopt(hCurl,CURLOPT_HEADER,false);
-    curl_easy_setopt(hCurl,CURLOPT_RANGE,rangStr);
-    curl_easy_setopt(hCurl,CURLOPT_WRITEFUNCTION,_httpHelperDataDownload);
+    KCheckEQ(curl_easy_setopt(hCurl,CURLOPT_HEADER,false),CURL_E);
+    KCheckEQ(curl_easy_setopt(hCurl,CURLOPT_RANGE,rangStr),CURL_E);
+    KCheckEQ(curl_easy_setopt(hCurl,
+                              CURLOPT_WRITEFUNCTION,
+                              _httpHelperDataDownload),
+             CURL_E);
 
     DownloadParam param;
     param.dataBuf = buf;
     param.writenLen = 0;
     param.bufLen = *len;
-    curl_easy_setopt(hCurl,CURLOPT_WRITEDATA,&param);
-    reval = curl_easy_perform(hCurl);
+    KCheckEQ(curl_easy_setopt(hCurl,CURLOPT_WRITEDATA,&param),CURL_E);
+    KCheckEQ(curl_easy_perform(hCurl),CURL_E);
 
     return KE_OK;
+
+CURL_E:
+    KLogErr("CUrl Error : %s",curl_easy_strerror(KCheckReval()));
+    return KE_3RD_PART_LIBS_ERROR;
 }

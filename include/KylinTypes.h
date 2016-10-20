@@ -32,6 +32,7 @@ typedef enum {
     KE_NULL_PTR = -2,
     KE_OUT_OF_RANGE = -3,
     KE_CONTAINER_FULL = -4,
+    KE_3RD_PART_LIBS_ERROR = -5,
     KE_MAX_ERROR_CODE
 } KErrorCode;
 

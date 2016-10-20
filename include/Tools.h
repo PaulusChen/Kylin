@@ -41,6 +41,15 @@ const char *KGetErrStr(KErrorCode errval);
 
 #define GetTryReval() __VOOLE_THROW_REVAL
 
+#define KCheckInit(type,success) \
+    type __KYLIN_CHECK_REVAL = success; \
+    type __KYLIN_CHECK_SUCCESS = success;
+
+#define KCheckEQ(fun,tag)                       \
+    if((__KYLIN_CHECK_REVAL = (fun)) != __KYLIN_CHECK_SUCCESS) goto tag
+
+#define KCheckReval() __KYLIN_CHECK_REVAL
+
 /////////////////////////////TypeDef//////////////////////////////
 #define TypeDefName(type) type##Def
 
