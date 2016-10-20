@@ -100,8 +100,6 @@ int KRbPreOrderTraverse(KRbNode *node,KRbTreeIterativeFun fun,void *param);
 } //extern "C"
 #endif
 
-
-
 static inline int KRbPreOrderTraverseTree(KRbRoot *root,KRbTreeIterativeFun fun,void *param) {
     CheckNULLPtr(root);
     CheckNULLPtr(root->node);

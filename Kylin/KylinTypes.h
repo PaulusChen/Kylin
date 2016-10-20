@@ -26,6 +26,8 @@
 #define GetTB(val) ((val) * TRILLION_BYTE_FACTOR)
 #define make_flag(pos) (1<<pos)
 
+#define GetTmpName(type,name) type##_##name
+
 typedef enum {
     KE_OK = 0,
     KE_UNKNOW = -1,
