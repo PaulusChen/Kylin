@@ -221,24 +221,24 @@ static inline void KRbInsertFixup(KRbRoot *root,KRbNode *node) {
 int KRbInsertSearched(KRbRoot *root,KRbNode *node,KRbNode *parent) {
     if (root == NULL || root->cmp == NULL
         || node == NULL || parent == NULL) {
-        return VE_NULL_PTR;
+        return KE_NULL_PTR;
     }
 
     if (parent->right != node && parent->left != node) {
-        return VE_UNKNOW;
+        return KE_UNKNOW;
     }
 
     KRbSetParentColor(node,parent,RBNODE_COLOR_RED);
     node->left = RBTreeNil;
     node->right = RBTreeNil;
     KRbInsertFixup(root,node);
-    return VE_OK;
+    return KE_OK;
 }
 
 int KRbInsert(KRbRoot *root,KRbNode *node) {
     if (root == NULL || root->cmp == NULL
         || node == NULL) {
-        return VE_NULL_PTR;
+        return KE_NULL_PTR;
     }
 
     if (root->node == RBTreeNil) {
@@ -246,7 +246,7 @@ int KRbInsert(KRbRoot *root,KRbNode *node) {
         node->left = RBTreeNil;
         node->right = RBTreeNil;
         KRbSetParentColor(node,RBTreeNil,RBNODE_COLOR_BLACK);
-        return VE_OK;
+        return KE_OK;
     }
 
     KRbNode *ptr = root->node;
@@ -279,7 +279,7 @@ int KRbInsert(KRbRoot *root,KRbNode *node) {
     node->left = RBTreeNil;
     node->right = RBTreeNil;
     KRbInsertFixup(root,node);
-    return VE_OK;
+    return KE_OK;
 }
 
 inline static void KRbTransplant(KRbRoot *root,KRbNode *node,KRbNode *child) {
@@ -508,7 +508,7 @@ int KRbPreOrderTraverse(KRbNode *node,KRbTreeIterativeFun fun,void *param) {
         } else {
             node = (KRbNode *)KStackTop(&stack);
             int reval = fun(node,param);
-            if(reval != VE_OK)
+            if(reval != KE_OK)
             {
                 KStackClean(&stack);
                 return reval;
@@ -518,13 +518,13 @@ int KRbPreOrderTraverse(KRbNode *node,KRbTreeIterativeFun fun,void *param) {
         }
     }
 
-    return VE_OK;
+    return KE_OK;
 }
 
 
 int KRbClearTree(KRbRoot *root,KRbTreeIterativeFun fun,void *param) {
     CheckNULLPtr(root);
-    int reval = VE_OK;
+    int reval = KE_OK;
     while (KRbNotNil(root->node)) {
         KRbNode *currentNode = root->node;
         KRbDelete(root,root->node);
@@ -532,9 +532,9 @@ int KRbClearTree(KRbRoot *root,KRbTreeIterativeFun fun,void *param) {
             reval = fun(currentNode,param);
         }
 
-        if (reval < VE_OK) {
+        if (reval < KE_OK) {
             return  reval;
         }
     }
-    return VE_OK;
+    return KE_OK;
 }

@@ -84,7 +84,7 @@ TEST(KHASH_TABLE,AddAndRemoveCorrectness) {
         uint64_t key = keyPool[i];
         cur->data1 = 19.22;
         cur->data2 = key;
-        if(KHashTable(KHTTest,Insert)(&htable,cur) != VE_OK) {
+        if(KHashTable(KHTTest,Insert)(&htable,cur) != KE_OK) {
             FAIL();
             cout<<"error!!!!!!!"<<endl;
             break;

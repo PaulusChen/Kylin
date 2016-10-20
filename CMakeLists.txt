@@ -41,5 +41,5 @@ add_library(kylin ${KYLIN_CODE_FILE})
 
 add_executable(kylin_testing ${KYLIN_TESTING_FILE})
 
-set(PUB_LIBRARIES libgtest.a pthread dl util m)
+set(PUB_LIBRARIES libgtest.a pthread dl util m curl)
 target_link_libraries(kylin_testing kylin ${PUB_LIBRARIES})

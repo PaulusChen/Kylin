@@ -89,10 +89,10 @@ uint32_t KHashTableGetTotalCount(KHTable *table) {
             (KHashSlotHead *)calloc(newTableLen,                        \
                                     sizeof(KHashSlotHead));             \
         if (newListTable == NULL) {                                     \
-            return VE_OK;                                               \
+            return KE_OK;                                               \
         }                                                               \
         if (table->tableLen * 2 > KHASH_TABLE_ALERT_TABLE_LEN) {        \
-            return VE_UNKNOW;                                           \
+            return KE_UNKNOW;                                           \
         }                                                               \
         uint32_t slotIndex = 0;                                         \
         table->maxSlotLen = 0;                                          \
@@ -121,7 +121,7 @@ uint32_t KHashTableGetTotalCount(KHTable *table) {
         free(table->table);                                             \
         table->table = newListTable;                                    \
         table->tableLen = newTableLen;                                  \
-        return VE_OK;                                                   \
+        return KE_OK;                                                   \
     }                                                                   \
     static inline void KHashTable(name,Init)(KHTable *table,            \
                                              uint64_t initSize,         \
@@ -140,7 +140,7 @@ uint32_t KHashTableGetTotalCount(KHTable *table) {
         assert(obj);                                                    \
         if (table->maxSlotLen > table->fillFactor) {                    \
             if (CheckFlag(table->flag,KHASH_TABLE_FLAG_NOT_GROWABLE)) { \
-                return VE_CONTAINER_FULL;                               \
+                return KE_CONTAINER_FULL;                               \
             } else {                                                    \
                 KHashTable(name,_vtableGrow)(table);                    \
             }                                                           \
@@ -153,7 +153,7 @@ uint32_t KHashTableGetTotalCount(KHTable *table) {
         table->totalCount++;                                            \
         table->maxSlotLen = (slot->len > table->maxSlotLen ?            \
                              slot->len : table->maxSlotLen);            \
-        return VE_OK;                                                   \
+        return KE_OK;                                                   \
     }                                                                   \
     static inline void KHashTable(name,Delete)(KHTable *table,          \
                                                objType *obj) {          \
@@ -200,7 +200,7 @@ uint32_t KHashTableGetTotalCount(KHTable *table) {
      KHashTable(objType,TraverseFun) traverseFun,                       \
      void *param) {                                                     \
         assert(table);                                                  \
-        if (traverseFun == NULL) return VE_OK;                          \
+        if (traverseFun == NULL) return KE_OK;                          \
         uint32_t slotIndex = 0;                                         \
         for (slotIndex = 0;                                             \
              slotIndex != table->tableLen;                              \
@@ -210,19 +210,19 @@ uint32_t KHashTableGetTotalCount(KHTable *table) {
             KHListForEach(current,&slot->listHead) {                    \
                 objType *obj = KHListEntry(current,objType,nodeName);   \
                 int reval = traverseFun(obj,param);                     \
-                if (reval != VE_OK) {                                   \
+                if (reval != KE_OK) {                                   \
                     return reval;                                       \
                 }                                                       \
             }                                                           \
         }                                                               \
-        return VE_OK;                                                   \
+        return KE_OK;                                                   \
     }                                                                   \
     static inline int KHashTable(name,Clear)                            \
     (KHTable *table,                                                    \
      KHashTable(objType,TraverseFun) traverseFun,                       \
      void *param) {                                                     \
         assert(table);                                                  \
-        if (traverseFun) return VE_OK;                                     \
+        if (traverseFun) return KE_OK;                                     \
         uint32_t slotIndex = 0;                                         \
         for (slotIndex = 0;                                             \
              slotIndex != table->tableLen;                              \
@@ -236,13 +236,13 @@ uint32_t KHashTableGetTotalCount(KHTable *table) {
                 table->totalCount--;                                    \
                 objType *curObj = KHListEntry(current,objType,nodeName); \
                 int reval = traverseFun(curObj,param);                  \
-                if (reval != VE_OK) {                                   \
+                if (reval != KE_OK) {                                   \
                     return reval;                                       \
                 }                                                       \
                 current = pNext;                                        \
             }                                                           \
         }                                                               \
-        return VE_OK;                                                   \
+        return KE_OK;                                                   \
     }                                                                   \
     static inline uint64_t KHashTable(name,HashFun)                     \
     (const KHashTable(name,keyType) *key)

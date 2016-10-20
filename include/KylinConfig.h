@@ -2,8 +2,9 @@
 #ifndef __KYLIN_CONFIG_H__
 #define __KYLIN_CONFIG_H__
 
+#include "KylinTypes.h"
 
-#include <limits.h>
-
+//configure
+#define MAX_URL_LEN GetKB(2)
 
 #endif

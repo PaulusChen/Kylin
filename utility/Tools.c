@@ -30,7 +30,7 @@ int bitMapCheck(const uint8_t *bitmap,size_t beg,size_t *len) {
     }
 
     size_t endBMI = GetRadixFloor(beg + *len,64)/64;
-    if (beginBMI == endBMI) return VE_OK;
+    if (beginBMI == endBMI) return KE_OK;
 
     uint32_t i = 0;
     for (i = beginBMI + 1; i < endBMI; i++) {
@@ -46,7 +46,7 @@ int bitMapCheck(const uint8_t *bitmap,size_t beg,size_t *len) {
     bitCount += lastBitCount;
 BIT_CHECK_FINISH:
     *len = (*len < bitCount ? *len : bitCount);
-    return VE_OK;
+    return KE_OK;
 }
 
 uint64_t bitMapGetSetMap(uint8_t beg,size_t len) {
@@ -84,7 +84,7 @@ int bitMapSet(uint8_t *bitmap,size_t beg,size_t len) {
         pSet[endBMI] |= setMask;
     }
 
-    return VE_OK;
+    return KE_OK;
 }
 
 uint8_t contSignFromLowBit(uint64_t bitmap) {

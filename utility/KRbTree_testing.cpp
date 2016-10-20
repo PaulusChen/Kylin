@@ -30,7 +30,7 @@ int TestKRbCompareFun(const KRbNode *a,const KRbNode *b) {
 int TestKRbTreeIterativeFun(KRbNode *node,void *param) {
     KRbNodeTest *pNode = KRbEntry(node,KRbNodeTest,node);
     ObjRelease(pNode);
-    return VE_OK;
+    return KE_OK;
 }
 
 int DisplayKRbTreeRecursion(KRbNode *node,uint32_t indent) {
@@ -51,7 +51,7 @@ int DisplayKRbTreeRecursion(KRbNode *node,uint32_t indent) {
         DisplayKRbTreeRecursion(node->left,indent + 3);
     }
 
-    return VE_OK;
+    return KE_OK;
 }
 
 int DisplayKRbTree(KRbNode *node) {
@@ -127,7 +127,7 @@ int traverseFun(KRbNode *node,void *param) {
     KRbNodeTest *pTest = KRbEntry(node,KRbNodeTest,node);
     cout<<"key : "<<pTest->Key<<" val : "<<pTest->TestVal1<<endl;
 
-    return VE_OK;
+    return KE_OK;
 }
 
 TEST_F(KRbTreeTest,KRbNodeSameKeyTest) {
