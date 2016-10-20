@@ -23,7 +23,7 @@ KHttpHelper_t *KCreateHttpHelper(const char *url) {
     strcpy(newHelper->url,url);
     newHelper->pCurl = curl_easy_init();
     if (newHelper->pCurl == NULL) {
-        DistoryHttpHelper(newHelper);
+        KDistoryHttpHelper(newHelper);
         return NULL;
     }
 
@@ -49,7 +49,8 @@ int64_t KHttpHelperGetContentLen(KHttpHelper_t *helper) {
     KCheckInit(CURLcode,CURLE_OK);
 
     CURL *hCurl = helper->pCurl;
-    //curl_easy_setopt(hCurl,CURLOPT_HEADER,true);
+    curl_easy_setopt(hCurl,CURLOPT_HEADER,true);
+    curl_easy_setopt(hCurl,CURLOPT_NOBODY,true);
     //curl_easy_setopt(hCurl,CURL_HEADERFUNCTION,_httpHelperHeaderParser);
     //curl_easy_setopt(hCurl,CURL_HEADERDATA,helper);
 
@@ -58,6 +59,7 @@ int64_t KHttpHelperGetContentLen(KHttpHelper_t *helper) {
     long responseCode = 0;
     KCheckEQ(curl_easy_getinfo(hCurl,CURLINFO_RESPONSE_CODE,&responseCode),CURL_E);
     if (responseCode != 200) {
+        curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
         return  KE_UNKNOW;
     }
 
@@ -66,9 +68,11 @@ int64_t KHttpHelperGetContentLen(KHttpHelper_t *helper) {
                                CURLINFO_CONTENT_LENGTH_DOWNLOAD,
                                &contentLen),CURL_E);
 
+    curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
     return (int64_t)contentLen;
 
 CURL_E:
+    curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
     KLogErr("CUrl Error : %s",curl_easy_strerror(KCheckReval()));
     return KE_3RD_PART_LIBS_ERROR;
 }
