@@ -6,7 +6,7 @@ project(Kylin)
 
 set(PROJECT_LIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs)
 
-include_directories(include
+include_directories(Kylin
   ${PROJECT_LIBS_DIR}/gtest
   ~/.local/include
   )
