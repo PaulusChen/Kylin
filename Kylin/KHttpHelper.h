@@ -15,6 +15,10 @@ void KDistoryHttpHelper(KHttpHelper_t *helper);
 
 int64_t KHttpHelperGetContentLen(KHttpHelper_t *helper);
 
+int KHttpHelperGetContentType(KHttpHelper_t *helper,
+                              char *contentType,
+                              uint64_t len);
+
 int KHttpHelperDownloadRange(KHttpHelper_t *helper,
                             uint8_t *buf,
                             uint64_t offset,

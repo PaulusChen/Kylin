@@ -15,6 +15,10 @@ TEST(KHttpHelper,base) {
     uint64_t len = GetKB(512);
     KHttpHelperDownloadRange(helper,buf,0,&len);
 
+    char contentType[1024];
+    KHttpHelperGetContentType(helper,contentType,1024);
+    cout<<contentType<<endl;
+
     ASSERT_NE(0,len);
 }
 

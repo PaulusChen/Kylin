@@ -101,7 +101,11 @@ const char *KGetErrStr(KErrorCode errval);
     free(name)
 
 #define CleanObj(type,name)                                             \
-                                                  TypeDefObj(type).DesFunc(name)
+    TypeDefObj(type).DesFunc(name)
+
+#define likely(x) __builtin_expect(!!(x),1)
+
+#define unlikely(x) __builtin_expect(!!(x),0)
 
 #define offsetoftype(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 
