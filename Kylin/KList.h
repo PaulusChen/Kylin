@@ -45,6 +45,9 @@ static inline void KListAddTail(KListNode *head,KListNode *newNode)
     __KListAddNode(newNode, head->prev, head);
 }
 
+static inline KListNode *KListTail(KListNode *head) {
+    return head->prev;
+}
 
 static inline void __KListDel(KListNode * prev, KListNode * next)
 {
