@@ -1,6 +1,7 @@
 #ifndef _KYLINTYPES_H_
 #define _KYLINTYPES_H_
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <limits.h>
 
@@ -37,6 +38,7 @@ typedef enum {
     KE_NO_ENTRY = -5,
     KE_3RD_PART_LIBS_ERROR = -6,
     KE_DB_ERROR = -7,
+    KE_SYNTAX_ERROR = -8,
     KE_MAX_ERROR_CODE
 } KErrorCode;
 

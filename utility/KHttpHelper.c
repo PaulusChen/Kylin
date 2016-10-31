@@ -3,7 +3,7 @@
 #include <curl/curl.h>
 
 #include "KHttpHelper.h"
-#include "Tools.h"
+#include "KTools.h"
 #include "KLog.h"
 #include "KylinTypes.h"
 

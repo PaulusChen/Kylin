@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <errno.h>
-#include "Tools.h"
+#include "KTools.h"
 #include "KLog.h"
 
 void KLogInit(const char *progName) {

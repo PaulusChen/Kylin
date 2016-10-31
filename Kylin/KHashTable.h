@@ -14,8 +14,8 @@
 #ifndef __KHASHTABLE_H__
 #define __KHASHTABLE_H__
 
-#include "KList.h"
 #include "KylinTypes.h"
+#include "KList.h"
 
 #define KHASH_TABLE_FILL_FACTOR_WARNING_LINE (32)
 #define KHASH_TABLE_ALERT_TABLE_LEN GetMB(10) //about 1000 00 00 // need 1 * sizeof(KHashSlotHead) mbyte = 160MB

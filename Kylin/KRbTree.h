@@ -2,7 +2,7 @@
 #ifndef __VRBTree__
 #define __VRBTree__
 
-#include "Tools.h"
+#include "KTools.h"
 
 #define RBNODE_COLOR_RED 0
 #define RBNODE_COLOR_BLACK 1

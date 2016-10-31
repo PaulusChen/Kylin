@@ -83,6 +83,12 @@ const char *KGetErrStr(KErrorCode errval);
         .InitFunc = (void (*)(void *,void *)) ConstructorName(type),    \
         .DesFunc = (void (*)(void *))DestructorName(type) }
 
+#define ArrayAlloc(type,size) \
+    (type *)calloc(size,sizeof(type))
+
+#define ArrayRelease(obj)                         \
+    free(obj);
+
 #define ObjAlloc(type)                          \
     (type *)calloc(1,sizeof(type))
 

@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "KHashTable.h"
-#include "Tools.h"
+#include "KTools.h"
 
 using namespace std;
 
