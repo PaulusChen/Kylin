@@ -19,9 +19,11 @@ static inline int nodeCmp(const uint64_t *keyA,const uint64_t *keyB) {
     return *keyA - *keyB;
 }
 
-InstHashTemplate(KHTTest,KHTTest,data2,node,nodeCmp) {
+HashTemplateDeclar(KHTTest,KHTTest,data2,node,nodeCmp) {
     return *key;
 }
+
+HashTemplateImpl(KHTTest,data2,node)
 
 TEST(KHASH_TABLE,AddAndBasic) {
 
