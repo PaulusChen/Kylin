@@ -33,7 +33,7 @@ KHttpHelper_t *KCreateHttpHelper(const char *url) {
     CURL *hCurl = newHelper->pCurl;
     curl_easy_setopt(hCurl,CURLOPT_URL,newHelper->url);
     curl_easy_setopt(hCurl,CURLOPT_CONNECTTIMEOUT,15);
-    curl_easy_setopt(hCurl,CURLOPT_TIMEOUT,5);
+    curl_easy_setopt(hCurl,CURLOPT_TIMEOUT,15);
     curl_easy_setopt(hCurl,CURLOPT_FOLLOWLOCATION,true);
     curl_easy_setopt(hCurl,CURLOPT_NOSIGNAL,true);
     curl_easy_setopt(hCurl,CURLOPT_NOPROGRESS,true);
@@ -67,7 +67,7 @@ int KHttpHelperRefreshInfo(KHttpHelper_t *helper) {
 
 CURL_E:
     curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
-    KLogErr("CUrl Error : %s",curl_easy_strerror(KCheckReval()));
+    KLogErr("CUrl Error : %s . \nWhen visit [%s]",curl_easy_strerror(KCheckReval()),helper->url);
     return KE_3RD_PART_LIBS_ERROR;
 }
 
@@ -90,7 +90,7 @@ int64_t KHttpHelperGetContentLen(KHttpHelper_t *helper) {
 
 CURL_E:
     curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
-    KLogErr("CUrl Error : %s",curl_easy_strerror(KCheckReval()));
+    KLogErr("CUrl Error : %s . \nWhen visit [%s]",curl_easy_strerror(KCheckReval()),helper->url);
     return KE_3RD_PART_LIBS_ERROR;
 
 }
@@ -121,7 +121,7 @@ int KHttpHelperGetContentType(KHttpHelper_t *helper,
 
 CURL_E:
     curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
-    KLogErr("CUrl Error : %s",curl_easy_strerror(KCheckReval()));
+    KLogErr("CUrl Error : %s . \nWhen visit [%s]",curl_easy_strerror(KCheckReval()),helper->url);
     return KE_3RD_PART_LIBS_ERROR;
 
 }
@@ -199,6 +199,6 @@ int KHttpHelperDownloadRange(KHttpHelper_t *helper,
     return KE_OK;
 
 CURL_E:
-    KLogErr("CUrl Error : %s",curl_easy_strerror(KCheckReval()));
+    KLogErr("CUrl Error : %s . \nWhen visit [%s]",curl_easy_strerror(KCheckReval()),helper->url);
     return KE_3RD_PART_LIBS_ERROR;
 }
