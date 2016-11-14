@@ -65,6 +65,9 @@ int KHttpHelperRefreshInfo(KHttpHelper_t *helper) {
         return  KE_UNKNOW;
     }
 
+    curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
+    return KE_OK;
+
 CURL_E:
     curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
     KLogErr("CUrl Error : %s . \nWhen visit [%s]",curl_easy_strerror(KCheckReval()),helper->url);
@@ -123,7 +126,6 @@ CURL_E:
     curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
     KLogErr("CUrl Error : %s . \nWhen visit [%s]",curl_easy_strerror(KCheckReval()),helper->url);
     return KE_3RD_PART_LIBS_ERROR;
-
 }
 
 typedef struct {
