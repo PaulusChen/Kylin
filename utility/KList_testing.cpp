@@ -14,7 +14,7 @@ typedef struct {
 
 TEST(KList,AddAndRemove) {
     KListNode headNode;
-    KListInitHead(&headNode);
+    KListInit(&headNode);
 
     KListTest testList1;
     testList1.data1 = 19.22;

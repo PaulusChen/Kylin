@@ -24,7 +24,7 @@ KHttpHelper_t *KCreateHttpHelper(const char *url) {
     strcpy(newHelper->url,url);
     newHelper->pCurl = curl_easy_init();
     if (newHelper->pCurl == NULL) {
-        KDistoryHttpHelper(newHelper);
+        KDestoryHttpHelper(newHelper);
         return NULL;
     }
 
@@ -41,7 +41,7 @@ KHttpHelper_t *KCreateHttpHelper(const char *url) {
     return newHelper;
 }
 
-void KDistoryHttpHelper(KHttpHelper_t *helper) {
+void KDestoryHttpHelper(KHttpHelper_t *helper) {
     assert(helper);
     curl_easy_cleanup(helper->pCurl);
     ObjRelease(helper);

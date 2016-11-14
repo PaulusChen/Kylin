@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include "KylinConfig.h"
+#include "KylinTypes.h"
 
 extern const char *VErrorString[];
 
@@ -86,6 +87,9 @@ const char *KGetErrStr(KErrorCode errval);
 #define ArrayAlloc(type,size) \
     (type *)calloc(size,sizeof(type))
 
+#define ArrayReAlloc(org,type,size)                                     \
+    (type *)realloc(org,size * sizeof(type))
+
 #define ArrayRelease(obj)                         \
     free(obj);
 
@@ -94,6 +98,8 @@ const char *KGetErrStr(KErrorCode errval);
 
 #define ObjRelease(obj)                         \
     free(obj);
+
+#define ObjSetZero(obj) memset(&obj,0,sizeof(obj))
 
 #define NewObj(type,name,param)                     \
     type *name = (type *)calloc(1,sizeof(type));    \

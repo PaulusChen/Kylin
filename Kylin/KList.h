@@ -14,6 +14,8 @@ typedef struct __KListNode {
     struct __KListNode *prev,*next;
 } KListNode;
 
+typedef KListNode KList;
+
 static inline void __KListAddNode(KListNode *newNode,
                              KListNode *prev,
                              KListNode *next)
@@ -24,29 +26,33 @@ static inline void __KListAddNode(KListNode *newNode,
     prev->next = newNode;
 }
 
-#define KLIST_HEAD_INIT(name) { &(name), &(name) }
+#define KLIST_INIT(name) { &(name), &(name) }
 
-#define KLIST_HEAD(name) \
-    KListNode name = KLIST_HEAD_INIT(name)
+#define KLIST_CREATE(name) \
+    KListNode name = KLIST_INIT(name)
 
-static inline void KListInitHead(KListNode *list) {
+static inline void KListInit(KList *list) {
     assert(list);
     list->next = list;
     list->prev = list;
 }
 
-static inline void KListAddHead(KListNode *head,KListNode *newNode)
+static inline void KListAddHead(KList *list,KListNode *newNode)
 {
-    __KListAddNode(newNode, head, head->next);
+    __KListAddNode(newNode, list, list->next);
 }
 
-static inline void KListAddTail(KListNode *head,KListNode *newNode)
+static inline void KListAddTail(KList *list,KListNode *newNode)
 {
-    __KListAddNode(newNode, head->prev, head);
+    __KListAddNode(newNode, list->prev, list);
 }
 
-static inline KListNode *KListTail(KListNode *head) {
-    return head->prev;
+static inline KListNode *KListTail(KList *list) {
+    return list->prev;
+}
+
+static inline KListNode *KListHead(KList *list) {
+    return list->next;
 }
 
 static inline void __KListDel(KListNode * prev, KListNode * next)
@@ -67,29 +73,26 @@ static inline void KListDel(KListNode *entry)
     entry->prev = NULL;
 }
 
-
-static inline void KListMove(KListNode *list, KListNode *head)
+static inline void KListMove(KList *list, KListNode *node)
 {
-    __KListDelEntry(list);
-    KListAddHead(head,list);
+    __KListDelEntry(node);
+    KListAddHead(list,node);
 }
 
-static inline void KListMoveTail(KListNode *list,
-                                  KListNode *head)
+static inline void KListMoveTail(KList *list,KListNode *node)
 {
-    __KListDelEntry(list);
-    KListAddTail(head,list);
+    __KListDelEntry(node);
+    KListAddTail(list,node);
 }
 
-static inline int KListIsLast(const KListNode *list,
-                               const KListNode *head)
+static inline int KListIsLast(const KList *list,const KListNode *node)
 {
-    return list->next == head;
+    return node->next == list;
 }
 
-static inline int KListEmpty(const KListNode *head)
+static inline int KListEmpty(const KList *list)
 {
-    return head->next == head;
+    return list->next == list;
 }
 
 
@@ -215,20 +218,20 @@ typedef struct {
     void *data;
 } KOListNode;
 
-static inline void KOListInit(KOListNode *head) {
-    KListInitHead(&head->node);
+static inline void KOListInit(KOListNode *list) {
+    KListInit(&list->node);
 }
 
-static inline void KOListAddHead(KOListNode *head, void *data) {
+static inline void KOListAddHead(KOListNode *list, void *data) {
     KOListNode *newNode = ObjAlloc(KOListNode);
     newNode->data = data;
-    KListAddHead(&head->node,&newNode->node);
+    KListAddHead(&list->node,&newNode->node);
 }
 
-static inline void KOListAddTail(KOListNode *head, void *data) {
+static inline void KOListAddTail(KOListNode *list, void *data) {
     KOListNode *newNode = ObjAlloc(KOListNode);
     newNode->data = data;
-    KListAddTail(&head->node,&newNode->node);
+    KListAddTail(&list->node,&newNode->node);
 }
 
 static inline void KOListDel(KOListNode *node) {
@@ -236,8 +239,8 @@ static inline void KOListDel(KOListNode *node) {
     ObjRelease(node);
 }
 
-static inline int KOListEmpty(const KOListNode *head) {
-    return KListEmpty(&head->node);
+static inline int KOListEmpty(const KOListNode *list) {
+    return KListEmpty(&list->node);
 }
 
 static inline KOListNode *KOListNext(const KOListNode *node) {
@@ -268,7 +271,7 @@ typedef KOListNode KStackNode;
 typedef KListNode KStack;
 
 static inline void KStackInit(KStack *stack) {
-    KListInitHead(stack);
+    KListInit(stack);
 }
 
 static inline void KStackPush(KStack *stack,void *data) {
