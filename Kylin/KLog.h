@@ -39,6 +39,7 @@ void KLog(bool pe,uint32_t type,const char *format,...);
 #define KLogErrErrno(fmt,args...)                \
     KLog(true,LOG_ERR,fmt,##args)
 
+
 #define VLOG_OPEN_LOG_BLOCK 1
 
 #ifdef VLOG_OPEN_LOG_BLOCK
