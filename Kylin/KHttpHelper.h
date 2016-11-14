@@ -11,7 +11,7 @@ extern "C" {
 
 KHttpHelper_t *KCreateHttpHelper(const char *url);
 
-void KDistoryHttpHelper(KHttpHelper_t *helper);
+void KDestoryHttpHelper(KHttpHelper_t *helper);
 
 int64_t KHttpHelperGetContentLen(KHttpHelper_t *helper);
 

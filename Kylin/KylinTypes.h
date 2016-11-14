@@ -39,6 +39,9 @@ typedef enum {
     KE_3RD_PART_LIBS_ERROR = -6,
     KE_DB_ERROR = -7,
     KE_SYNTAX_ERROR = -8,
+    KE_SYS_OBJ_CREATE_FAILED = -9,
+    KE_SYS_OPT_FAILED = -10,
+    KE_BAD_PARAM = -11,
     KE_MAX_ERROR_CODE
 } KErrorCode;
 
