@@ -92,6 +92,24 @@ static inline uint32_t KHashTableGetTotalCount(KHTable *table) {
     int KHashTable(name,_vtableGrow)                                    \
     (KHTable *table);                                                   \
                                                                         \
+    static inline KHashTable(name,keyType) *KHashTable(name,GetKey)     \
+    (objType *obj) {                                                    \
+        return &obj->keyName;                                           \
+    }                                                                   \
+                                                                        \
+    static inline KHashTable(name,keyType) *                            \
+    KHashTable(name,getKeyFromNode)(KHListNode *node) {                 \
+        KHashTable(name,ObjType) *obj =                              \
+            KHListEntry(node,                                           \
+                        KHashTable(name,ObjType),                       \
+                        nodeName);                                      \
+        return KHashTable(name,GetKey)(obj);                         \
+    }                                                                   \
+                                                                        \
+    static inline KHListNode *KHashTable(name,GetNode)(objType *obj){   \
+        return &obj->nodeName;                                          \
+    }                                                                   \
+                                                                        \
     static inline void KHashTable(name,Init)(KHTable *table,            \
                                              uint64_t initSize,         \
                                              uint32_t flag) {           \
@@ -115,10 +133,12 @@ static inline uint32_t KHashTableGetTotalCount(KHTable *table) {
                 KHashTable(name,_vtableGrow)(table);                    \
             }                                                           \
         }                                                               \
-        uint64_t hashVal = KHashTable(name,HashFun)(&obj->keyName);     \
+        uint64_t hashVal = KHashTable(name,HashFun)                     \
+            (KHashTable(name,GetKey)(obj));                             \
         uint32_t slotIndex = hashVal % table->tableLen;                 \
         KHashSlotHead *slot = &table->table[slotIndex];                 \
-        KHListAddHead(&slot->listHead,&obj->nodeName);                  \
+        KHListNode *node = KHashTable(name,GetNode)(obj);               \
+        KHListAddHead(&slot->listHead,node);                            \
         slot->len++;                                                    \
         table->totalCount++;                                            \
         table->maxSlotLen = (slot->len > table->maxSlotLen ?            \
@@ -130,12 +150,13 @@ static inline uint32_t KHashTableGetTotalCount(KHTable *table) {
                                                objType *obj) {          \
         assert(table);                                                  \
         assert(obj);                                                    \
-        uint64_t hashVal = KHashTable(name,HashFun)(&obj->keyName);     \
+        uint64_t hashVal = KHashTable(name,HashFun)                     \
+            (KHashTable(name,GetKey)(obj));                             \
         uint32_t slotIndex = hashVal % table->tableLen;                 \
         KHashSlotHead *slot = &table->table[slotIndex];                 \
         slot->len--;                                                    \
         table->totalCount--;                                            \
-        KHListDel(&obj->nodeName);                                      \
+        KHListDel(KHashTable(name,GetNode)(obj));                       \
     }                                                                   \
                                                                         \
     static inline objType *KHashTable(name,Search)                      \
@@ -150,7 +171,7 @@ static inline uint32_t KHashTableGetTotalCount(KHTable *table) {
         KHListForEach(current,&slot->listHead) {                        \
             objType *curObj = KHListEntry(current,objType,nodeName);    \
             const KHashTable(name,keyType) *currentKey =                \
-                &curObj->keyName;                                       \
+                KHashTable(name,GetKey)(curObj);                        \
             if(comparePred(currentKey,key) == 0) {                      \
                 return curObj;                                          \
             }                                                           \
@@ -223,9 +244,7 @@ static inline uint32_t KHashTableGetTotalCount(KHTable *table) {
     static inline uint64_t KHashTable(name,HashFun)                     \
     (const KHashTable(name,keyType) *key)
 
-#define HashTemplateImpl(name,                                          \
-                         keyName,                                       \
-                         nodeName)                                      \
+#define HashTemplateImpl(name)                                          \
     int KHashTable(name,_vtableGrow)                                    \
     (KHTable *table) {                                                  \
         uint32_t newTableLen = table->tableLen * 2;                     \
@@ -249,12 +268,8 @@ static inline uint32_t KHashTableGetTotalCount(KHTable *table) {
             for (current = slot->listHead.first; current ;) {           \
                 KHListNode *pNext = current->next;                      \
                 KHListDel(current);                                     \
-                KHashTable(name,ObjType) *curObj =                      \
-                    KHListEntry(current,                                \
-                                KHashTable(name,ObjType),               \
-                                nodeName);                              \
                 const KHashTable(name,keyType) *currentKey =            \
-                    &curObj->keyName;                                   \
+                    KHashTable(name,getKeyFromNode)(current);           \
                 uint64_t hashVal = KHashTable(name,HashFun)(currentKey); \
                 KHashSlotHead *newSlot =                                \
                     &newListTable[hashVal%newTableLen];                 \

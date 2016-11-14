@@ -23,7 +23,7 @@ HashTemplateDeclar(KHTTest,KHTTest,data2,node,nodeCmp) {
     return *key;
 }
 
-HashTemplateImpl(KHTTest,data2,node)
+HashTemplateImpl(KHTTest)
 
 TEST(KHASH_TABLE,AddAndBasic) {
 
