@@ -99,11 +99,11 @@ static inline uint32_t KHashTableGetTotalCount(KHTable *table) {
                                                                         \
     static inline KHashTable(name,keyType) *                            \
     KHashTable(name,getKeyFromNode)(KHListNode *node) {                 \
-        KHashTable(name,ObjType) *obj =                              \
+        KHashTable(name,ObjType) *obj =                                 \
             KHListEntry(node,                                           \
                         KHashTable(name,ObjType),                       \
                         nodeName);                                      \
-        return KHashTable(name,GetKey)(obj);                         \
+        return KHashTable(name,GetKey)(obj);                            \
     }                                                                   \
                                                                         \
     static inline KHListNode *KHashTable(name,GetNode)(objType *obj){   \
@@ -122,9 +122,24 @@ static inline uint32_t KHashTableGetTotalCount(KHTable *table) {
                                                sizeof(KHashSlotHead));  \
     }                                                                   \
                                                                         \
+    static inline int KHashTable(name,Clear)                            \
+    (KHTable *table,                                                    \
+     KHashTable(objType,TraverseFun) traverseFun,                       \
+     void *param);                                                      \
+                                                                        \
+    static inline void KHashTable(name,Destory)                         \
+    (KHTable *table,                                                    \
+     KHashTable(objType,TraverseFun) traverseFun,                       \
+     void *param) {                                                     \
+        KHashTable(name,Clear)(table,traverseFun,param);                \
+        free(table->table);                                             \
+        table->table = NULL;                                            \
+    }                                                                   \
+                                                                        \
     static inline int KHashTable(name,Insert)(KHTable *table,           \
                                               objType *obj) {           \
         assert(table);                                                  \
+        assert(table->table);                                           \
         assert(obj);                                                    \
         if (table->maxSlotLen > table->fillFactor) {                    \
             if (CheckFlag(table->flag,KHASH_TABLE_FLAG_NOT_GROWABLE)) { \
@@ -149,6 +164,7 @@ static inline uint32_t KHashTableGetTotalCount(KHTable *table) {
     static inline void KHashTable(name,Delete)(KHTable *table,          \
                                                objType *obj) {          \
         assert(table);                                                  \
+        assert(table->table);                                           \
         assert(obj);                                                    \
         uint64_t hashVal = KHashTable(name,HashFun)                     \
             (KHashTable(name,GetKey)(obj));                             \
@@ -164,6 +180,7 @@ static inline uint32_t KHashTableGetTotalCount(KHTable *table) {
      const KHashTable(name,keyType) *key) {                             \
         assert(table);                                                  \
         assert(key);                                                    \
+        if (table->table == NULL) return NULL;                          \
         uint64_t hashVal = KHashTable(name,HashFun)(key);               \
         uint32_t slotIndex = hashVal % table->tableLen;                 \
         KHashSlotHead *slot = &table->table[slotIndex];                 \
@@ -195,6 +212,7 @@ static inline uint32_t KHashTableGetTotalCount(KHTable *table) {
      KHashTable(objType,TraverseFun) traverseFun,                       \
      void *param) {                                                     \
         assert(table);                                                  \
+        if(table->table == NULL); return KE_OK;                         \
         if (traverseFun == NULL) return KE_OK;                          \
         uint32_t slotIndex = 0;                                         \
         for (slotIndex = 0;                                             \
@@ -218,7 +236,9 @@ static inline uint32_t KHashTableGetTotalCount(KHTable *table) {
      KHashTable(objType,TraverseFun) traverseFun,                       \
      void *param) {                                                     \
         assert(table);                                                  \
-        if (traverseFun) return KE_OK;                                  \
+        if (table->table == NULL) {                                     \
+            return KE_OK;                                               \
+        }                                                               \
         uint32_t slotIndex = 0;                                         \
         for (slotIndex = 0;                                             \
              slotIndex != table->tableLen;                              \
@@ -231,9 +251,12 @@ static inline uint32_t KHashTableGetTotalCount(KHTable *table) {
                 slot->len--;                                            \
                 table->totalCount--;                                    \
                 objType *curObj = KHListEntry(current,objType,nodeName); \
-                int reval = traverseFun(curObj,param);                  \
-                if (reval != KE_OK) {                                   \
-                    return reval;                                       \
+                int reval = KE_OK;                                      \
+                if (traverseFun) {                                      \
+                    reval = traverseFun(curObj,param);                  \
+                    if (reval != KE_OK) {                               \
+                        return reval;                                   \
+                    }                                                   \
                 }                                                       \
                 current = pNext;                                        \
             }                                                           \

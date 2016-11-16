@@ -19,38 +19,38 @@ static inline int nodeCmp(const uint64_t *keyA,const uint64_t *keyB) {
     return *keyA - *keyB;
 }
 
-HashTemplateDeclar(KHTTest,KHTTest,data2,node,nodeCmp) {
+HashTemplateDeclar(KHT,KHTTest,data2,node,nodeCmp) {
     return *key;
 }
 
-HashTemplateImpl(KHTTest)
+HashTemplateImpl(KHT)
 
 TEST(KHASH_TABLE,AddAndBasic) {
 
     KHTable htable;
-    KHashTable(KHTTest,Init)(&htable,1024,0);
+    KHashTable(KHT,Init)(&htable,1024,0);
     KHTTest test1;
     test1.data1 = 19.22;
     test1.data2 = 0x12345678;
-    KHashTable(KHTTest,Insert)(&htable,&test1);
+    KHashTable(KHT,Insert)(&htable,&test1);
 
     KHTTest test2;
     test2.data1 = 20.11;
     test2.data2 = 0x87654321;
-    KHashTable(KHTTest,Insert)(&htable,&test2);
+    KHashTable(KHT,Insert)(&htable,&test2);
 
     KHTTest test3;
     test3.data1 = 0.11;
     test3.data2 = 0x43218765;
-    KHashTable(KHTTest,Insert)(&htable,&test3);
+    KHashTable(KHT,Insert)(&htable,&test3);
 
     uint64_t key = 0x87654321;
-    KHTTest *p = KHashTable(KHTTest,Search)(&htable,&key);
+    KHTTest *p = KHashTable(KHT,Search)(&htable,&key);
     ASSERT_DOUBLE_EQ(p->data1,20.11);
 
-    KHashTable(KHTTest,Delete)(&htable,&test2);
+    KHashTable(KHT,Delete)(&htable,&test2);
     key = 0x87654321;
-    p = KHashTable(KHTTest,Search)(&htable,&key);
+    p = KHashTable(KHT,Search)(&htable,&key);
     ASSERT_EQ(NULL,p);
 }
 
@@ -68,7 +68,7 @@ TEST(KHASH_TABLE,AddAndRemoveCorrectness) {
 
     const uint64_t testSize = GetMB(1);
     KHTable htable;
-    KHashTable(KHTTest,Init)(&htable,testSize,0);
+    KHashTable(KHT,Init)(&htable,testSize,0);
 
     uint64_t *keyPool = new uint64_t[testSize];
     for (int i = 0; i != testSize; i++) {
@@ -86,7 +86,7 @@ TEST(KHASH_TABLE,AddAndRemoveCorrectness) {
         uint64_t key = keyPool[i];
         cur->data1 = 19.22;
         cur->data2 = key;
-        if(KHashTable(KHTTest,Insert)(&htable,cur) != KE_OK) {
+        if(KHashTable(KHT,Insert)(&htable,cur) != KE_OK) {
             FAIL();
             cout<<"error!!!!!!!"<<endl;
             break;
@@ -103,9 +103,9 @@ TEST(KHASH_TABLE,AddAndRemoveCorrectness) {
     KHTTest *p = NULL;
     for (i = 0; i != testSize; i++) {
         uint64_t key = keyPool[i];
-        p = KHashTable(KHTTest,Search)(&htable,&key);
+        p = KHashTable(KHT,Search)(&htable,&key);
         if (p == NULL) {
-            p = KHashTable(KHTTest,Search)(&htable,&key);
+            p = KHashTable(KHT,Search)(&htable,&key);
             break;
         }
         sum += p->data2;
@@ -126,7 +126,7 @@ TEST(KHASH_TABLE,AddAndRemoveCorrectness) {
     p = NULL;
     for (i = 0; i != testSize; i++) {
         uint64_t key = keyPool[i];
-        p = KHashTable(KHTTest,DeleteByKey)(&htable,&key);
+        p = KHashTable(KHT,DeleteByKey)(&htable,&key);
         if (p == NULL) {
             FAIL();
         }
@@ -148,6 +148,7 @@ TEST(KHASH_TABLE,AddAndRemoveCorrectness) {
     ASSERT_EQ(KHashTableDebugCount(&htable),0);
     ASSERT_EQ(KHashTableDebugCount(&htable),KHashTableGetTotalCount(&htable));
 
+    KHashTable(KHT,Destory)(&htable,NULL,NULL);
     delete []testArray;
     delete []keyPool;
 }
