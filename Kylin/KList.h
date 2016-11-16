@@ -141,9 +141,8 @@ static inline void __KHListDel(KHListNode *n)
 
 	KHListNode *next = n->next;
 	KHListNode **pprev = n->pprev;
-	*pprev = next;
-	if (next)
-		next->pprev = pprev;
+    if (pprev) *pprev = next;
+	if (next) next->pprev = pprev;
 }
 
 static inline void KHListDel(KHListNode *n)
