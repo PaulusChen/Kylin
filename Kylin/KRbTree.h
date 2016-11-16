@@ -28,7 +28,7 @@ typedef struct {
     KRbCompareKeyFun cmpKey;
     KRbSearchHit hit;
     KRbInserted inserted;
-} KRbRoot;
+} KRbTree;
 
 extern KRbNode *RBTreeNil;
 
@@ -75,7 +75,7 @@ static inline void KRbSetColor(KRbNode *rb,int color) {
     rb->__parent_color |= color;
 }
 
-static inline void KRbInitTree(KRbRoot *root) {
+static inline void KRbInitTree(KRbTree *root) {
     root->node = RBTreeNil;
 }
 
@@ -89,18 +89,18 @@ KRbNode *KRbMinimum(KRbNode *node);
 KRbNode *KRbMaximum(KRbNode *node);
 KRbNode *KRbSuccessor(KRbNode *node);
 KRbNode *KRbPredecessor(KRbNode *node);
-KRbNode *KRbSearch(KRbRoot *root,const void *key);
-int KRbInsertSearched(KRbRoot *root,KRbNode *node,KRbNode *parent);
-int KRbInsert(KRbRoot *root,KRbNode *node);
-void KRbDelete(KRbRoot *root,KRbNode *node);
-int KRbClearTree(KRbRoot *root,KRbTreeIterativeFun fun,void *param);
+KRbNode *KRbSearch(KRbTree *root,const void *key);
+int KRbInsertSearched(KRbTree *root,KRbNode *node,KRbNode *parent);
+int KRbInsert(KRbTree *root,KRbNode *node);
+void KRbDelete(KRbTree *root,KRbNode *node);
+int KRbClearTree(KRbTree *root,KRbTreeIterativeFun fun,void *param);
 int KRbPreOrderTraverse(KRbNode *node,KRbTreeIterativeFun fun,void *param);
 
 #ifdef __cplusplus
 } //extern "C"
 #endif
 
-static inline int KRbPreOrderTraverseTree(KRbRoot *root,KRbTreeIterativeFun fun,void *param) {
+static inline int KRbPreOrderTraverseTree(KRbTree *root,KRbTreeIterativeFun fun,void *param) {
     CheckNULLPtr(root);
     CheckNULLPtr(root->node);
     return KRbPreOrderTraverse(root->node,fun,param);

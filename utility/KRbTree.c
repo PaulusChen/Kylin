@@ -53,7 +53,7 @@ KRbNode *KRbPredecessor(KRbNode *node) {
     return reval;
 }
 
-static inline void KRbLeftRotate(KRbRoot *root,KRbNode *node) {
+static inline void KRbLeftRotate(KRbTree *root,KRbNode *node) {
     if (root == NULL || node == NULL) {
         return ;
     }
@@ -80,7 +80,7 @@ static inline void KRbLeftRotate(KRbRoot *root,KRbNode *node) {
 }
 
 
-static inline void KRbRightRotate(KRbRoot *root,KRbNode *node) {
+static inline void KRbRightRotate(KRbTree *root,KRbNode *node) {
     if (root == NULL || node == NULL) {
         return ;
     }
@@ -107,7 +107,7 @@ static inline void KRbRightRotate(KRbRoot *root,KRbNode *node) {
 }
 
 
-KRbNode *KRbSearch(KRbRoot *root,const void *key) {
+KRbNode *KRbSearch(KRbTree *root,const void *key) {
     if (root == NULL || root->cmp == NULL
         || key == NULL || root->node == RBTreeNil
         || root->cmpKey == NULL) {
@@ -141,7 +141,7 @@ KRbNode *KRbSearch(KRbRoot *root,const void *key) {
 }
 
 
-static inline void KRbInsertFixup(KRbRoot *root,KRbNode *node) {
+static inline void KRbInsertFixup(KRbTree *root,KRbNode *node) {
     KRbNode *pNode = KRbParent(node);
     KRbNode *gpNode = NULL;
     while(KRbIsRed(pNode)) {
@@ -218,7 +218,7 @@ static inline void KRbInsertFixup(KRbRoot *root,KRbNode *node) {
     KRbSetBlack(root->node);
 }
 
-int KRbInsertSearched(KRbRoot *root,KRbNode *node,KRbNode *parent) {
+int KRbInsertSearched(KRbTree *root,KRbNode *node,KRbNode *parent) {
     if (root == NULL || root->cmp == NULL
         || node == NULL || parent == NULL) {
         return KE_NULL_PTR;
@@ -235,7 +235,7 @@ int KRbInsertSearched(KRbRoot *root,KRbNode *node,KRbNode *parent) {
     return KE_OK;
 }
 
-int KRbInsert(KRbRoot *root,KRbNode *node) {
+int KRbInsert(KRbTree *root,KRbNode *node) {
     if (root == NULL || root->cmp == NULL
         || node == NULL) {
         return KE_NULL_PTR;
@@ -282,7 +282,7 @@ int KRbInsert(KRbRoot *root,KRbNode *node) {
     return KE_OK;
 }
 
-inline static void KRbTransplant(KRbRoot *root,KRbNode *node,KRbNode *child) {
+inline static void KRbTransplant(KRbTree *root,KRbNode *node,KRbNode *child) {
     assert(root);
     assert(node);
     assert(child);
@@ -300,7 +300,7 @@ inline static void KRbTransplant(KRbRoot *root,KRbNode *node,KRbNode *child) {
     KRbSetParent(child,parent);
 }
 
-void KRbDeleteFixup(KRbRoot *root,KRbNode *node) {
+void KRbDeleteFixup(KRbTree *root,KRbNode *node) {
     assert(root);
     assert(node);
 
@@ -428,7 +428,7 @@ void KRbDeleteFixup(KRbRoot *root,KRbNode *node) {
     KRbSetBlack(node);
 }
 
-void KRbDelete(KRbRoot *root,KRbNode *node) {
+void KRbDelete(KRbTree *root,KRbNode *node) {
     assert(root);
     assert(node);
 
@@ -522,7 +522,7 @@ int KRbPreOrderTraverse(KRbNode *node,KRbTreeIterativeFun fun,void *param) {
 }
 
 
-int KRbClearTree(KRbRoot *root,KRbTreeIterativeFun fun,void *param) {
+int KRbClearTree(KRbTree *root,KRbTreeIterativeFun fun,void *param) {
     CheckNULLPtr(root);
     int reval = KE_OK;
     while (KRbNotNil(root->node)) {

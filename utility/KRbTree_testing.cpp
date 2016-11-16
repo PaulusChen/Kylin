@@ -108,7 +108,7 @@ protected:
         KRbClearTree(&root,TestKRbTreeIterativeFun,NULL);
     }
 
-    KRbRoot root;
+    KRbTree root;
 };
 
 
@@ -185,7 +185,7 @@ TEST_F(KRbTreeTest,KRbNodeSeqInsertTest) {
     EXPECT_EQ(predcessor,findNode);
 }
 
-void KRbTreeTestInsert(KRbRoot *root,int key,double val) {
+void KRbTreeTestInsert(KRbTree *root,int key,double val) {
     KRbNodeTest *test = ObjAlloc(KRbNodeTest);
     test->Key = key;
     test->TestVal1 = val;
@@ -213,7 +213,7 @@ TEST_F(KRbTreeTest,KRbNodeSeqLargerInsertTest) {
     DisplayKRbTree(root.node);
 }
 
-KRbNode *KRbSearchID(KRbRoot *root,int id) {
+KRbNode *KRbSearchID(KRbTree *root,int id) {
     return KRbSearch(root,&id);
 }
 
