@@ -25,7 +25,9 @@ const char *KGetErrStr(KErrorCode errval);
 #define CheckFlag(val,flag) (!!((val)&(flag)))
 
 #define GET_MASK(len) ((1LL<<(len)) - 1)
+
 #define GetBitmapByteLen(bitLen)        ((bitLen)/8)
+
 #define CheckNULLPtr(ptr)                       \
     if(NULL == ptr) return KE_NULL_PTR
 
@@ -90,7 +92,7 @@ const char *KGetErrStr(KErrorCode errval);
 #define ArrayReAlloc(org,type,size)             \
     (type *)realloc(org,size * sizeof(type))
 
-#define ArrayRelease(obj)                                       \
+#define ArrayRelease(obj)                                \
                                                   free(obj);
 
 #define ObjAlloc(type)                          \
