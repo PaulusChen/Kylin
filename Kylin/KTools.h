@@ -25,9 +25,7 @@ const char *KGetErrStr(KErrorCode errval);
 #define CheckFlag(val,flag) (!!((val)&(flag)))
 
 #define GET_MASK(len) ((1LL<<(len)) - 1)
-
 #define GetBitmapByteLen(bitLen)        ((bitLen)/8)
-
 #define CheckNULLPtr(ptr)                       \
     if(NULL == ptr) return KE_NULL_PTR
 
@@ -37,18 +35,18 @@ const char *KGetErrStr(KErrorCode errval);
 #define Try(fun)                                                        \
     if((__VOOLE_THROW_REVAL = (fun)) < KE_OK) return __VOOLE_THROW_REVAL
 
-#define TryF(fun,tag)                                   \
+#define TryF(fun,tag)                                                   \
     if((__VOOLE_THROW_REVAL = (fun)) < KE_OK) goto tag
 
 #define ReturnThrow() return __VOOLE_THROW_REVAL
 
 #define GetTryReval() __VOOLE_THROW_REVAL
 
-#define KCheckInit(type,success)                \
-    type __KYLIN_CHECK_REVAL = success;         \
+#define KCheckInit(type,success) \
+    type __KYLIN_CHECK_REVAL = success; \
     type __KYLIN_CHECK_SUCCESS = success;
 
-#define KCheckEQ(fun,tag)                                               \
+#define KCheckEQ(fun,tag)                       \
     if((__KYLIN_CHECK_REVAL = (fun)) != __KYLIN_CHECK_SUCCESS) goto tag
 
 #define KCheckReval() __KYLIN_CHECK_REVAL
@@ -86,14 +84,14 @@ const char *KGetErrStr(KErrorCode errval);
         .InitFunc = (void (*)(void *,void *)) ConstructorName(type),    \
         .DesFunc = (void (*)(void *))DestructorName(type) }
 
-#define ArrayAlloc(type,size)                   \
+#define ArrayAlloc(type,size) \
     (type *)calloc(size,sizeof(type))
 
-#define ArrayReAlloc(org,type,size)             \
+#define ArrayReAlloc(org,type,size)                                     \
     (type *)realloc(org,size * sizeof(type))
 
-#define ArrayRelease(obj)                                \
-                                                  free(obj);
+#define ArrayRelease(obj)                         \
+    free(obj);
 
 #define ObjAlloc(type)                          \
     (type *)calloc(1,sizeof(type))
@@ -103,18 +101,18 @@ const char *KGetErrStr(KErrorCode errval);
 
 #define ObjSetZero(obj) memset(&obj,0,sizeof(obj))
 
-#define NewObj(type,name,param)                                         \
-                                                                   type *name = (type *)calloc(1,sizeof(type)); \
-                                                                   TypeDefObj(type).InitFunc(name,param)
+#define NewObj(type,name,param)                     \
+    type *name = (type *)calloc(1,sizeof(type));    \
+    TypeDefObj(type).InitFunc(name,param)
 
 #define InitialObj(type,name,param)             \
     TypeDefObj(type).InitFunc(name,param)
 
 #define DeleteObj(type,name)                    \
-    TypeDefObj(type).DesFunc(name);             \
-                    free(name)
+    TypeDefObj(type).DesFunc(name);     \
+    free(name)
 
-#define CleanObj(type,name)                     \
+#define CleanObj(type,name)                                             \
     TypeDefObj(type).DesFunc(name)
 
 #define KLockerGuardName(name) __locker_guard_##name
@@ -134,7 +132,6 @@ const char *KGetErrStr(KErrorCode errval);
 #define vcontainer_of(ptr, type, member) ({                             \
             const typeof(((type *)0)->member)*__mptr = (ptr);           \
             (type *)((char *)__mptr - offsetoftype(type, member)); })
-
 
 static inline uint64_t GetRadixFloor(uint64_t val,uint64_t radix) {
     return (val/radix)*radix;
