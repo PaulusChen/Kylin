@@ -5,6 +5,6 @@
 #include "KylinTypes.h"
 
 //configure
-#define MAX_URL_LEN GetKB(2)
+#define MAX_URL_LEN GetKB(100)
 
 #endif

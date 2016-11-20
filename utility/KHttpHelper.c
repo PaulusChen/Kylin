@@ -8,7 +8,7 @@
 #include "KylinTypes.h"
 
 struct KHttpHelper{
-    char url[MAX_URL_LEN];
+    char *url;
     CURL *pCurl;
     bool isFreshed;
 };
@@ -21,6 +21,7 @@ KHttpHelper_t *KCreateHttpHelper(const char *url) {
         return NULL;
     }
 
+    url = ArrayAlloc(char,urlLen + 1);
     strcpy(newHelper->url,url);
     newHelper->pCurl = curl_easy_init();
     if (newHelper->pCurl == NULL) {
@@ -44,6 +45,8 @@ KHttpHelper_t *KCreateHttpHelper(const char *url) {
 void KDestoryHttpHelper(KHttpHelper_t *helper) {
     assert(helper);
     curl_easy_cleanup(helper->pCurl);
+
+    ArrayRelease(helper->url);
     ObjRelease(helper);
 }
 
