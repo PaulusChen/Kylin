@@ -117,7 +117,7 @@ const char *KGetErrStr(KErrorCode errval);
 #define CleanObj(type,name)                     \
     TypeDefObj(type).DesFunc(name)
 
-#define KLockerGuardName(name) __locker_guard_#name
+#define KLockerGuardName(name) __locker_guard_##name
 
 #define KLockerGuard(name,locker)               \
     int KLockerGuardName(name) = 0;             \
