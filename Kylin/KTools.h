@@ -35,18 +35,18 @@ const char *KGetErrStr(KErrorCode errval);
 #define Try(fun)                                                        \
     if((__VOOLE_THROW_REVAL = (fun)) < KE_OK) return __VOOLE_THROW_REVAL
 
-#define TryF(fun,tag)                                                   \
+#define TryF(fun,tag)                                   \
     if((__VOOLE_THROW_REVAL = (fun)) < KE_OK) goto tag
 
 #define ReturnThrow() return __VOOLE_THROW_REVAL
 
 #define GetTryReval() __VOOLE_THROW_REVAL
 
-#define KCheckInit(type,success) \
-    type __KYLIN_CHECK_REVAL = success; \
+#define KCheckInit(type,success)                \
+    type __KYLIN_CHECK_REVAL = success;         \
     type __KYLIN_CHECK_SUCCESS = success;
 
-#define KCheckEQ(fun,tag)                       \
+#define KCheckEQ(fun,tag)                                               \
     if((__KYLIN_CHECK_REVAL = (fun)) != __KYLIN_CHECK_SUCCESS) goto tag
 
 #define KCheckReval() __KYLIN_CHECK_REVAL
@@ -84,14 +84,14 @@ const char *KGetErrStr(KErrorCode errval);
         .InitFunc = (void (*)(void *,void *)) ConstructorName(type),    \
         .DesFunc = (void (*)(void *))DestructorName(type) }
 
-#define ArrayAlloc(type,size) \
+#define ArrayAlloc(type,size)                   \
     (type *)calloc(size,sizeof(type))
 
-#define ArrayReAlloc(org,type,size)                                     \
+#define ArrayReAlloc(org,type,size)             \
     (type *)realloc(org,size * sizeof(type))
 
-#define ArrayRelease(obj)                         \
-    free(obj);
+#define ArrayRelease(obj)                                       \
+                                                  free(obj);
 
 #define ObjAlloc(type)                          \
     (type *)calloc(1,sizeof(type))
@@ -101,19 +101,27 @@ const char *KGetErrStr(KErrorCode errval);
 
 #define ObjSetZero(obj) memset(&obj,0,sizeof(obj))
 
-#define NewObj(type,name,param)                     \
-    type *name = (type *)calloc(1,sizeof(type));    \
-    TypeDefObj(type).InitFunc(name,param)
+#define NewObj(type,name,param)                                         \
+                                                                   type *name = (type *)calloc(1,sizeof(type)); \
+                                                                   TypeDefObj(type).InitFunc(name,param)
 
 #define InitialObj(type,name,param)             \
     TypeDefObj(type).InitFunc(name,param)
 
 #define DeleteObj(type,name)                    \
-    TypeDefObj(type).DesFunc(name);     \
-    free(name)
+    TypeDefObj(type).DesFunc(name);             \
+                    free(name)
 
-#define CleanObj(type,name)                                             \
+#define CleanObj(type,name)                     \
     TypeDefObj(type).DesFunc(name)
+
+#define KLockerGuardName(name) __locker_guard_#name
+
+#define KLockerGuard(name,locker)               \
+    int KLockerGuardName(name) = 0;             \
+    for (pthread_mutex_lock(locker);            \
+         KLockerGuardName(name)++ == 0;         \
+         pthread_mutex_unlock(locker))
 
 #define likely(x) __builtin_expect(!!(x),1)
 
