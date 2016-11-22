@@ -31,7 +31,6 @@ void *httpWorkerFunc(void *param) {
 
 KHttpHelper_t *KCreateHttpHelper(uint32_t workerCount) {
     KHttpHelper_t *helper = ObjAlloc(KHttpHelper_t);
-
     helper->workerCount = workerCount;
     helper->workerList = ArrayAlloc(KHttpWorker_t,workerCount);
 
