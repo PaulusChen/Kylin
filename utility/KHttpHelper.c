@@ -1,206 +1,102 @@
 
 #include <inttypes.h>
-#include <curl/curl.h>
+
+#include <unistd.h>
+#include <pthread.h>
+
+#include <event.h>
+#include <event2/http.h>
 
 #include "KHttpHelper.h"
 #include "KTools.h"
 #include "KLog.h"
 #include "KylinTypes.h"
 
-struct KHttpHelper{
-    char url[MAX_URL_LEN];
-    CURL *pCurl;
-    bool isFreshed;
+typedef struct KHttpWorker {
+    pthread_t thread;
+    struct event_base *base;
+} KHttpWorker_t;
+
+struct KHttpHelper {
+    KHttpWorker_t *workerList;
+    uint32_t workerCount;
 };
 
-KHttpHelper_t *KCreateHttpHelper(const char *url) {
+void *httpWorkerFunc(void *param) {
+    KHttpWorker_t *pworker = (KHttpWorker_t *)param;
+    pworker->base = event_base_new();
+    event_base_dispatch(pworker->base);
+    return NULL;
+}
 
-    KHttpHelper_t *newHelper = ObjAlloc(KHttpHelper_t);
-    uint64_t urlLen = strlen(url);
-    if (urlLen > MAX_URL_LEN) {
-        return NULL;
+KHttpHelper_t *KCreateHttpHelper(uint32_t workerCount) {
+    KHttpHelper_t *helper = ObjAlloc(KHttpHelper_t);
+
+    helper->workerCount = workerCount;
+    helper->workerList = ArrayAlloc(KHttpWorker_t,workerCount);
+
+    uint32_t i = 0;
+    for (i = 0; i != workerCount; i++) {
+        pthread_create(&helper->workerList[i].thread,
+                       NULL,
+                       httpWorkerFunc,
+                       &helper->workerList[i]);
     }
 
-    strcpy(newHelper->url,url);
-    newHelper->pCurl = curl_easy_init();
-    if (newHelper->pCurl == NULL) {
-        KDestoryHttpHelper(newHelper);
-        return NULL;
-    }
-
-    newHelper->isFreshed = false;
-
-    CURL *hCurl = newHelper->pCurl;
-    curl_easy_setopt(hCurl,CURLOPT_URL,newHelper->url);
-    curl_easy_setopt(hCurl,CURLOPT_CONNECTTIMEOUT,15);
-    curl_easy_setopt(hCurl,CURLOPT_TIMEOUT,15);
-    curl_easy_setopt(hCurl,CURLOPT_FOLLOWLOCATION,true);
-    curl_easy_setopt(hCurl,CURLOPT_NOSIGNAL,true);
-    curl_easy_setopt(hCurl,CURLOPT_NOPROGRESS,true);
-
-    return newHelper;
+    return helper;
 }
 
 void KDestoryHttpHelper(KHttpHelper_t *helper) {
     assert(helper);
-    curl_easy_cleanup(helper->pCurl);
     ObjRelease(helper);
 }
 
-int KHttpHelperRefreshInfo(KHttpHelper_t *helper) {
-    KCheckInit(CURLcode,CURLE_OK);
+uint64_t urlHash(const char *url) {
+    return 0;
+}
 
-    CURL *hCurl = helper->pCurl;
-    KCheckEQ(curl_easy_setopt(hCurl,CURLOPT_HEADER,true),CURL_E);
-    KCheckEQ(curl_easy_setopt(hCurl,CURLOPT_NOBODY,true),CURL_E);
-    //curl_easy_setopt(hCurl,CURL_HEADERFUNCTION,_httpHelperHeaderParser);
-    //curl_easy_setopt(hCurl,CURL_HEADERDATA,helper);
-    KCheckEQ(curl_easy_perform(hCurl),CURL_E);
-    KCheckEQ(curl_easy_setopt(hCurl,CURLOPT_NOBODY,false),CURL_E);
+void http_helper_get_data_handler(struct evhttp_request *req,void *arg) {
 
-    long responseCode = 0;
-    KCheckEQ(curl_easy_getinfo(hCurl,CURLINFO_RESPONSE_CODE,&responseCode),CURL_E);
-    if (responseCode != 200) {
-        curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
-        return  KE_UNKNOW;
+}
+
+int KHttpHelperGetData(KHttpHelper_t *helper,
+                       const char *url,
+                       KHttpHelperGetDataHandler handler) {
+
+    uint64_t hash = urlHash(url);
+    uint64_t workerIndex = hash%helper->workerCount;
+
+    KHttpWorker_t *worker = &helper->workerList[workerIndex];
+
+    struct evhttp_uri *uri = evhttp_uri_parse(url);
+    int port = evhttp_uri_get_port(uri);
+    if (port == -1) {
+        port = 80;
     }
 
-    curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
+    struct evhttp_connection *cn = NULL;
+    cn = evhttp_connection_base_new(worker->base,
+                                    NULL,
+                                    evhttp_uri_get_host(uri),
+                                    port);
+
+    struct evhttp_request *req = NULL;
+    req = evhttp_request_new(http_helper_get_data_handler,NULL);
+
+    const char *query = evhttp_uri_get_query(uri);
+    const char *path = evhttp_uri_get_path(uri);
+    size_t len = (query?strlen(query):0) + (path?strlen(path):0) + 1;
+    char *pathQuery = "/";
+    if (len > 1) {
+        pathQuery = ArrayAlloc(char,len);
+        sprintf(pathQuery,"%s?%s",path,query);
+    }
+
+    evhttp_make_request(cn,req,EVHTTP_REQ_GET,pathQuery);
+
+    if (len > 1) {
+        ArrayRelease(pathQuery);
+    }
     return KE_OK;
-
-CURL_E:
-    curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
-    KLogErr("CUrl Error : %s . \nWhen visit [%s]",curl_easy_strerror(KCheckReval()),helper->url);
-    return KE_3RD_PART_LIBS_ERROR;
 }
 
-int64_t KHttpHelperGetContentLen(KHttpHelper_t *helper) {
-    KCheckInit(CURLcode,CURLE_OK);
-
-
-    if (!helper->isFreshed) {
-        KHttpHelperRefreshInfo(helper);
-    }
-
-    CURL *hCurl = helper->pCurl;
-
-    double contentLen;
-    KCheckEQ(curl_easy_getinfo(hCurl,
-                               CURLINFO_CONTENT_LENGTH_DOWNLOAD,
-                               &contentLen),CURL_E);
-
-    return (int64_t)contentLen;
-
-CURL_E:
-    curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
-    KLogErr("CUrl Error : %s . \nWhen visit [%s]",curl_easy_strerror(KCheckReval()),helper->url);
-    return KE_3RD_PART_LIBS_ERROR;
-
-}
-
-int KHttpHelperGetContentType(KHttpHelper_t *helper,
-                              char *contentType,
-                              uint64_t len) {
-    KCheckInit(CURLcode,CURLE_OK);
-
-    if (!helper->isFreshed) {
-        KHttpHelperRefreshInfo(helper);
-    }
-
-    CURL *hCurl = helper->pCurl;
-
-    char *type;
-    KCheckEQ(curl_easy_getinfo(hCurl,
-                               CURLINFO_CONTENT_TYPE,
-                               &type),CURL_E);
-
-    uint64_t contentTypeLen = strlen(type);
-    if (len < contentTypeLen) {
-        return KE_OUT_OF_RANGE;
-    }
-
-    strcpy(contentType,type);
-    return KE_OK;
-
-CURL_E:
-    curl_easy_setopt(hCurl,CURLOPT_NOBODY,false);
-    KLogErr("CUrl Error : %s . \nWhen visit [%s]",curl_easy_strerror(KCheckReval()),helper->url);
-    return KE_3RD_PART_LIBS_ERROR;
-}
-
-typedef struct {
-    uint8_t *dataBuf;
-    uint64_t writenLen;
-    uint64_t bufLen;
-} DownloadParam;
-
-static size_t _httpHelperDataDownload(char *buf,
-                                      size_t size,
-                                      size_t nitem,
-                                      void *userdata) {
-    DownloadParam *param = (DownloadParam *)userdata;
-    size_t getLen = size *nitem;
-    if (param->writenLen + getLen > param->bufLen) {
-        KLogErr("There is too many data to be save.");
-        return getLen;
-    }
-
-    memcpy(param->dataBuf + param->writenLen,buf,getLen);
-    param->writenLen += getLen;
-
-    return getLen;
-}
-
-int KHttpHelperDownloadRange(KHttpHelper_t *helper,
-                            uint8_t *buf,
-                            uint64_t offset,
-                            uint64_t *len) {
-    CURL *hCurl = helper->pCurl;
-    double contentLen;
-
-    KCheckInit(CURLcode,CURLE_OK);
-    KCheckEQ(curl_easy_getinfo(hCurl,
-                               CURLINFO_CONTENT_LENGTH_DOWNLOAD,
-                               &contentLen),
-             CURL_E);
-
-    int64_t totalLen = 0;
-    if (contentLen > 0.0) {
-        totalLen = contentLen;
-    } else {
-        totalLen = KHttpHelperGetContentLen(helper);
-        if (totalLen < 0) {
-            return totalLen;
-        }
-    }
-
-    if ((uint64_t)totalLen < offset) {
-        return KE_OUT_OF_RANGE;
-    }
-
-    if (offset + *len > (uint64_t)totalLen) {
-        *len = totalLen - offset;
-    }
-
-    char rangStr[256];
-    sprintf(rangStr,"%"PRIu64"-%"PRIu64,offset,offset + *len);
-    KCheckEQ(curl_easy_setopt(hCurl,CURLOPT_HEADER,false),CURL_E);
-    KCheckEQ(curl_easy_setopt(hCurl,CURLOPT_RANGE,rangStr),CURL_E);
-    KCheckEQ(curl_easy_setopt(hCurl,
-                              CURLOPT_WRITEFUNCTION,
-                              _httpHelperDataDownload),
-             CURL_E);
-
-    DownloadParam param;
-    param.dataBuf = buf;
-    param.writenLen = 0;
-    param.bufLen = *len;
-    KCheckEQ(curl_easy_setopt(hCurl,CURLOPT_WRITEDATA,&param),CURL_E);
-    KCheckEQ(curl_easy_perform(hCurl),CURL_E);
-
-    return KE_OK;
-
-CURL_E:
-    KLogErr("CUrl Error : %s . \nWhen visit [%s]",curl_easy_strerror(KCheckReval()),helper->url);
-    return KE_3RD_PART_LIBS_ERROR;
-}
