@@ -12,6 +12,9 @@
 #include "KLog.h"
 #include "KylinTypes.h"
 
+#define HTTP_CREATED 201
+#define HTTP_PARTIAL_CONTENT 206
+
 typedef struct KHttpWorker {
     pthread_t thread;
     struct event_base *base;
@@ -75,15 +78,20 @@ static int khttpHelperTaskInit(KHttpHelperRequestTask_t *task,
     task->handler = handler;
     task->uri = evhttp_uri_parse(url);
     task->worker = worker;
+    if (task->buffer == NULL) {
+        task->buffer = evbuffer_new();
+    }
+
     int port = evhttp_uri_get_port(task->uri);
     if (port == -1) {
         port = 80;
     }
 
+    const char *host = evhttp_uri_get_host(task->uri);
     task->cn = NULL;
     task->cn = evhttp_connection_base_new(worker->base,
                                           NULL,
-                                          evhttp_uri_get_host(task->uri),
+                                          host,
                                           port);
 
     task->req = NULL;
@@ -94,10 +102,25 @@ static int khttpHelperTaskInit(KHttpHelperRequestTask_t *task,
     task->pathQuery = NULL;
     if (len > 1) {
         task->pathQuery = ArrayAlloc(char,len);
-        sprintf(task->pathQuery,"%s?%s",path,query);
+
+        if (query) {
+            sprintf(task->pathQuery,"%s?%s",path,query);
+        } else {
+            sprintf(task->pathQuery,"%s",path);
+        }
     }
 
+    KLogDebug("Init a task, url :[%s] host :[%s] port:[%uh] pathQuery :[%s]",
+              url,host,port,task->pathQuery);
+
     task->req = evhttp_request_new(httpHelperGetDataHandler,task);
+
+    evhttp_add_header(evhttp_request_get_output_headers(task->req),"Host",host);
+
+    evhttp_add_header(evhttp_request_get_output_headers(task->req),
+                      "Connection","keep-alive");
+
+    
     return KE_OK;
 }
 
@@ -116,8 +139,12 @@ static int khttpHelperTaskRun(KHttpHelperRequestTask_t *task,
 
 static void *httpWorkerFunc(void *param) {
     KHttpWorker_t *pworker = (KHttpWorker_t *)param;
-    pworker->base = event_base_new();
-    event_base_dispatch(pworker->base);
+    KLogInfo("KHttpHelper Running...");
+    while(true) {
+        event_base_dispatch(pworker->base);
+        sleep(1);
+    }
+    KLogInfo("KHttpHelper Quiting...");
     return NULL;
 }
 
@@ -128,6 +155,7 @@ KHttpHelper_t *KCreateHttpHelper(uint32_t workerCount) {
 
     uint32_t i = 0;
     for (i = 0; i != workerCount; i++) {
+        helper->workerList[i].base = event_base_new();
         pthread_create(&helper->workerList[i].thread,
                        NULL,
                        httpWorkerFunc,
@@ -164,17 +192,25 @@ static void httpHelperGetDataHandler(struct evhttp_request *req,void *arg) {
     const char *newLocation = NULL;
 
     if (req == NULL) {
+        KLogDebug("Request timeout? "
+                  "callback function got req that point to NULL");
+
         task->status = KE_TIMEOUT;
         task->handler(task);
     }
 
 
-    switch(evhttp_request_get_response_code(req))
+    int responseCode = evhttp_request_get_response_code(req);
+    switch(responseCode)
     {
+
     case HTTP_OK:
+    case HTTP_NOCONTENT:
+    case HTTP_PARTIAL_CONTENT:
         evbuffer_add_buffer(task->buffer,evhttp_request_get_input_buffer(req));
         task->handler(task);
         break;
+    case HTTP_CREATED :
     case HTTP_MOVEPERM:
     case HTTP_MOVETEMP:
         newLocation = evhttp_find_header(evhttp_request_get_input_headers(req),
@@ -202,7 +238,7 @@ static void httpHelperGetDataHandler(struct evhttp_request *req,void *arg) {
         }
     default:
         //unknow error
-        KLogErr("Send request failed...");
+        KLogErr("Send request failed...ResponseCode : [%d]",responseCode);
     }
 
 FINISH:
