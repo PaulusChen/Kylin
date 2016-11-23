@@ -3,11 +3,19 @@
 #include <iostream>
 
 #include "KHttpHelper.h"
+#include "KLog.h"
 
 using namespace std;
 
 
 void testKHttpHelperGetDataHandler(KHttpHelperRequestTask_t *task) {
+
+    int status = KHttpHelperTaskGetStatus(task);
+    if (status != KE_OK) {
+        KLogErr("Http Get Failed.");
+        return ;
+    }
+
     const char *contentType = KHttpHelperTaskGetContentType(task);
     cout<<"Content Type : "<<contentType<<endl;
 

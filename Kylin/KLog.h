@@ -5,9 +5,18 @@
 
 #include "KylinTypes.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void KLogInit(const char *progName);
 
 void KLog(bool pe,uint32_t type,const char *format,...);
+
+#ifdef __cplusplus
+} //extern "C"
+#endif
+
 
 #define KLogDebug(fmt,args...)                   \
     KLog(false,LOG_DEBUG,fmt,##args)

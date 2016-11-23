@@ -38,6 +38,8 @@ const char *KHttpHelperTaskGetContentType(KHttpHelperRequestTask_t *task);
 
 int64_t KHttpHelperTaskGetContentLen(KHttpHelperRequestTask_t *task);
 
+int KHttpHelperTaskGetStatus(KHttpHelperRequestTask_t *task);
+
 #ifdef __cplusplus
 } //extern "C"
 #endif

@@ -158,11 +158,16 @@ static inline uint64_t urlHash(const char *url) {
 }
 
 static void httpHelperGetDataHandler(struct evhttp_request *req,void *arg) {
-    assert(req);
     assert(arg);
 
     KHttpHelperRequestTask_t *task = (KHttpHelperRequestTask_t *)arg;
     const char *newLocation = NULL;
+
+    if (req == NULL) {
+        task->status = KE_TIMEOUT;
+        task->handler(task);
+    }
+
 
     switch(evhttp_request_get_response_code(req))
     {
@@ -232,6 +237,10 @@ int64_t KHttpHelperTaskGetContentLen(KHttpHelperRequestTask_t *task) {
     }
 
     return atoll(contentLen);
+}
+
+int KHttpHelperTaskGetStatus(KHttpHelperRequestTask_t *task) {
+    return task->status;
 }
 
 size_t KHttpHelperTaskGetRespBodyData(KHttpHelperRequestTask_t *task,
