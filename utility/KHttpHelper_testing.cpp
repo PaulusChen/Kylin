@@ -27,7 +27,7 @@ void testKHttpHelperGetDataHandler(KHttpHelperRequestTask_t *task) {
 TEST(KHttpHelper,base) {
     KHttpHelper_t *helper = KCreateHttpHelper(10);
     KHttpHelperRequestRange(helper,
-                            "http://127.0.0.1/testfile",
+                            "http://localhost/testfile",
                             0,
                             GetKB(10),
                             testKHttpHelperGetDataHandler);

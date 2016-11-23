@@ -6,6 +6,7 @@
 
 #include <event.h>
 #include <event2/http.h>
+#include <event2/dns.h>
 
 #include "KHttpHelper.h"
 #include "KTools.h"
@@ -18,6 +19,7 @@
 typedef struct KHttpWorker {
     pthread_t thread;
     struct event_base *base;
+    struct evdns_base *dnsbase;
 } KHttpWorker_t;
 
 struct KHttpHelperRequestTask {
@@ -78,6 +80,7 @@ static int khttpHelperTaskInit(KHttpHelperRequestTask_t *task,
     task->handler = handler;
     task->uri = evhttp_uri_parse(url);
     task->worker = worker;
+
     if (task->buffer == NULL) {
         task->buffer = evbuffer_new();
     }
@@ -90,7 +93,7 @@ static int khttpHelperTaskInit(KHttpHelperRequestTask_t *task,
     const char *host = evhttp_uri_get_host(task->uri);
     task->cn = NULL;
     task->cn = evhttp_connection_base_new(worker->base,
-                                          NULL,
+                                          worker->dnsbase,
                                           host,
                                           port);
 
@@ -156,6 +159,9 @@ KHttpHelper_t *KCreateHttpHelper(uint32_t workerCount) {
     uint32_t i = 0;
     for (i = 0; i != workerCount; i++) {
         helper->workerList[i].base = event_base_new();
+        helper->workerList[i].dnsbase =
+            evdns_base_new(helper->workerList[i].base,1);
+
         pthread_create(&helper->workerList[i].thread,
                        NULL,
                        httpWorkerFunc,
@@ -172,6 +178,7 @@ void KDestoryHttpHelper(KHttpHelper_t *helper) {
         for (i = 0; i != helper->workerCount ;i++) {
             event_base_loopexit(helper->workerList[i].base,NULL);
             event_base_free(helper->workerList[i].base);
+            evdns_base_free(helper->workerList[i].dnsbase,1);
         }
         for (i = 0; i != helper->workerCount ;i++) {
             pthread_join(helper->workerList[i].thread,NULL);
