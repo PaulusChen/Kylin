@@ -12,8 +12,8 @@ typedef struct KHttpHelperRequestTask KHttpHelperRequestTask_t;
 extern "C" {
 #endif
 
-
-typedef void (*KHttpHelperGetDataHandler)(KHttpHelperRequestTask_t *task);
+typedef void (*KHttpHelperGetDataHandler)(KHttpHelperRequestTask_t *task,
+                                          void *param);
 
 KHttpHelper_t *KCreateHttpHelper(uint32_t workerCount);
 
@@ -21,13 +21,20 @@ void KDestoryHttpHelper(KHttpHelper_t *helper);
 
 int KHttpHelperRequest(KHttpHelper_t *helper,
                        const char *url,
-                       KHttpHelperGetDataHandler handler);
+                       KHttpHelperGetDataHandler handler,
+                       void *userParam);
+
+int KHttpHelperRequestHead(KHttpHelper_t *helper,
+                           const char *url,
+                           KHttpHelperGetDataHandler handler,
+                           void *userParam);
 
 int KHttpHelperRequestRange(KHttpHelper_t *helper,
                             const char *url,
-                            size_t beg,
-                            size_t end,
-                            KHttpHelperGetDataHandler handler);
+                            size_t offset,
+                            size_t len,
+                            KHttpHelperGetDataHandler handler,
+                            void *userParam);
 
 size_t KHttpHelperTaskGetRespBodySize(KHttpHelperRequestTask_t *task);
 

@@ -8,7 +8,7 @@
 using namespace std;
 
 
-void testKHttpHelperGetDataHandler(KHttpHelperRequestTask_t *task) {
+void testKHttpHelperGetDataHandler(KHttpHelperRequestTask_t *task,void *param) {
 
     int status = KHttpHelperTaskGetStatus(task);
     if (status != KE_OK) {
@@ -17,22 +17,30 @@ void testKHttpHelperGetDataHandler(KHttpHelperRequestTask_t *task) {
     }
 
     const char *contentType = KHttpHelperTaskGetContentType(task);
-    cout<<"Content Type : "<<contentType<<endl;
+    cout<<"Content Type : "<<contentType;
 
     uint64_t contentLen = KHttpHelperTaskGetContentLen(task);
-    cout<<"Content Length : "<<contentLen<<endl;
+    cout<<" Content Length : "<<contentLen;
 
+    int *testval = (int *)param;
+    cout<<" testval :"<<*testval<<endl;
 }
 
 TEST(KHttpHelper,base) {
     KHttpHelper_t *helper = KCreateHttpHelper(10);
-    KHttpHelperRequestRange(helper,
-                            "http://localhost/testfile",
-                            0,
-                            GetKB(10),
-                            testKHttpHelperGetDataHandler);
+    int *testval = new int;
+    *testval = 100;
 
-    sleep(100);
+    for(int i = 0 ; i != GetKB(100); ++i) {
+        KHttpHelperRequestRange(helper,
+                                "http://localhost/testfile",
+                                i * 80,
+                                GetKB(10),
+                                testKHttpHelperGetDataHandler,
+                                testval);
+    }
+
+    sleep(10000);
 
     KDestoryHttpHelper(helper);
 }

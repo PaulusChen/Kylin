@@ -20,6 +20,8 @@ typedef struct KHttpWorker {
     pthread_t thread;
     struct event_base *base;
     struct evdns_base *dnsbase;
+    //pthread_mutex_t baseLock;
+    pthread_cond_t cond;
 } KHttpWorker_t;
 
 struct KHttpHelperRequestTask {
@@ -30,6 +32,7 @@ struct KHttpHelperRequestTask {
     enum evhttp_cmd_type cmdType;
     KHttpWorker_t *worker;
     int status;
+    void *userParam;
     KHttpHelperGetDataHandler handler;
     char *pathQuery;
 };
@@ -57,7 +60,6 @@ static int khttpHelperTaskClear(KHttpHelperRequestTask_t *task) {
     if (task->buffer) {
         evbuffer_free(task->buffer);
         task->buffer = NULL;
-
     }
 
     task->handler = NULL;
@@ -92,10 +94,13 @@ static int khttpHelperTaskInit(KHttpHelperRequestTask_t *task,
 
     const char *host = evhttp_uri_get_host(task->uri);
     task->cn = NULL;
+    //pthread_mutex_lock(&worker->baseLock);
     task->cn = evhttp_connection_base_new(worker->base,
                                           worker->dnsbase,
                                           host,
                                           port);
+
+    //pthread_mutex_unlock(&worker->baseLock);
 
     task->req = NULL;
 
@@ -113,8 +118,8 @@ static int khttpHelperTaskInit(KHttpHelperRequestTask_t *task,
         }
     }
 
-    KLogDebug("Init a task, url :[%s] host :[%s] port:[%uh] pathQuery :[%s]",
-              url,host,port,task->pathQuery);
+    //KLogDebug("Init a task, url :[%s] host :[%s] port:[%hu] pathQuery :[%s]",
+    //          url,host,port,task->pathQuery);
 
     task->req = evhttp_request_new(httpHelperGetDataHandler,task);
 
@@ -123,7 +128,6 @@ static int khttpHelperTaskInit(KHttpHelperRequestTask_t *task,
     evhttp_add_header(evhttp_request_get_output_headers(task->req),
                       "Connection","keep-alive");
 
-    
     return KE_OK;
 }
 
@@ -143,13 +147,26 @@ static int khttpHelperTaskRun(KHttpHelperRequestTask_t *task,
 static void *httpWorkerFunc(void *param) {
     KHttpWorker_t *pworker = (KHttpWorker_t *)param;
     KLogInfo("KHttpHelper Running...");
-    while(true) {
-        event_base_dispatch(pworker->base);
-        sleep(1);
-    }
+    event_base_dispatch(pworker->base);
     KLogInfo("KHttpHelper Quiting...");
     return NULL;
 }
+
+void httpWorkerTimeoutHandler(evutil_socket_t fd, short what, void *arg) {
+
+}
+
+
+void httpWorkerAddTimer(struct event_base *base,uint64_t time)
+{
+    struct timeval one_sec = { time, 0 };
+    struct event *ev;
+    /* We're going to set up a repeating timer to get called called 100
+       times. */
+    ev = event_new(base, -1, EV_PERSIST, httpWorkerTimeoutHandler, NULL);
+    event_add(ev, &one_sec);
+}
+
 
 KHttpHelper_t *KCreateHttpHelper(uint32_t workerCount) {
     KHttpHelper_t *helper = ObjAlloc(KHttpHelper_t);
@@ -158,14 +175,16 @@ KHttpHelper_t *KCreateHttpHelper(uint32_t workerCount) {
 
     uint32_t i = 0;
     for (i = 0; i != workerCount; i++) {
-        helper->workerList[i].base = event_base_new();
-        helper->workerList[i].dnsbase =
-            evdns_base_new(helper->workerList[i].base,1);
+        KHttpWorker_t *pWorker = &helper->workerList[i];
+        pWorker->base = event_base_new();
+        pWorker->dnsbase = evdns_base_new(pWorker->base,1);
+        //pthread_mutex_init(&pWorker->baseLock,NULL);
 
-        pthread_create(&helper->workerList[i].thread,
+        httpWorkerAddTimer(pWorker->base,1);
+        pthread_create(&pWorker->thread,
                        NULL,
                        httpWorkerFunc,
-                       &helper->workerList[i]);
+                       pWorker);
     }
 
     return helper;
@@ -188,8 +207,20 @@ void KDestoryHttpHelper(KHttpHelper_t *helper) {
     ObjRelease(helper);
 }
 
-static inline uint64_t urlHash(const char *url) {
-    return 0;
+static inline uint32_t urlHash(const char *url) {
+
+    int len = strlen(url);
+
+    const char *end = url + len;
+    uint32_t h = 0, g = 0;
+    while (url < end) {
+        h = (h << 4) + *url++;
+        if ((g = (h & 0xF0000000))) {
+            h = h ^ (g >> 24);
+            h = h ^ g;
+        }
+    }
+    return h;
 }
 
 static void httpHelperGetDataHandler(struct evhttp_request *req,void *arg) {
@@ -203,7 +234,7 @@ static void httpHelperGetDataHandler(struct evhttp_request *req,void *arg) {
                   "callback function got req that point to NULL");
 
         task->status = KE_TIMEOUT;
-        task->handler(task);
+        task->handler(task,task->userParam);
     }
 
 
@@ -215,7 +246,7 @@ static void httpHelperGetDataHandler(struct evhttp_request *req,void *arg) {
     case HTTP_NOCONTENT:
     case HTTP_PARTIAL_CONTENT:
         evbuffer_add_buffer(task->buffer,evhttp_request_get_input_buffer(req));
-        task->handler(task);
+        task->handler(task,task->userParam);
         break;
     case HTTP_CREATED :
     case HTTP_MOVEPERM:
@@ -227,7 +258,7 @@ static void httpHelperGetDataHandler(struct evhttp_request *req,void *arg) {
                     "without Location header item.");
 
             task->status = KE_UNKNOW;
-            task->handler(task);
+            task->handler(task,task->userParam);
             goto FINISH;
         }
         if((task->status =
@@ -236,11 +267,11 @@ static void httpHelperGetDataHandler(struct evhttp_request *req,void *arg) {
                                 newLocation,
                                 task->handler)) != KE_OK) {
 
-            task->handler(task);
+            task->handler(task,task->userParam);
             goto FINISH;
         }
         if((task->status = khttpHelperTaskRun(task,task->cmdType)) != KE_OK) {
-            task->handler(task);
+            task->handler(task,task->userParam);
             goto FINISH;
         }
     default:
@@ -315,22 +346,25 @@ size_t KHttpHelperTaskGetRespBodyData(KHttpHelperRequestTask_t *task,
 
 int KHttpHelperRequest(KHttpHelper_t *helper,
                        const char *url,
-                       KHttpHelperGetDataHandler handler) {
-    uint64_t hash = urlHash(url);
-    uint64_t workerIndex = hash%helper->workerCount;
+                       KHttpHelperGetDataHandler handler,
+                       void *userParam) {
+    uint32_t hash = urlHash(url);
+    uint32_t workerIndex = hash%helper->workerCount;
     KHttpWorker_t *worker = &helper->workerList[workerIndex];
     KHttpHelperRequestTask_t *task = ObjAlloc(KHttpHelperRequestTask_t);
 
     InitThrow();
     Try(khttpHelperTaskInit(task,worker,url,handler));
+    task->userParam = userParam;
     Try(khttpHelperTaskRun(task,EVHTTP_REQ_GET));
 
     return KE_OK;
 }
 
 int KHttpHelperRequestHead(KHttpHelper_t *helper,
-                       const char *url,
-                       KHttpHelperGetDataHandler handler) {
+                           const char *url,
+                           KHttpHelperGetDataHandler handler,
+                           void *userParam) {
     uint64_t hash = urlHash(url);
     uint64_t workerIndex = hash%helper->workerCount;
     KHttpWorker_t *worker = &helper->workerList[workerIndex];
@@ -338,6 +372,7 @@ int KHttpHelperRequestHead(KHttpHelper_t *helper,
 
     InitThrow();
     Try(khttpHelperTaskInit(task,worker,url,handler));
+    task->userParam = userParam;
     Try(khttpHelperTaskRun(task,EVHTTP_REQ_HEAD));
 
     return KE_OK;
@@ -347,7 +382,8 @@ int KHttpHelperRequestRange(KHttpHelper_t *helper,
                             const char *url,
                             size_t offset,
                             size_t len,
-                            KHttpHelperGetDataHandler handler) {
+                            KHttpHelperGetDataHandler handler,
+                            void *userParam) {
     uint64_t hash = urlHash(url);
     uint64_t workerIndex = hash%helper->workerCount;
     KHttpWorker_t *worker = &helper->workerList[workerIndex];
@@ -355,6 +391,7 @@ int KHttpHelperRequestRange(KHttpHelper_t *helper,
 
     InitThrow();
     Try(khttpHelperTaskInit(task,worker,url,handler));
+    task->userParam = userParam;
 
     char rangeStr[256];
     sprintf(rangeStr,"bytes=%"PRIu64"-%"PRIu64,offset,offset + len);
