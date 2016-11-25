@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #include <event.h>
 #include <event2/http.h>
@@ -11,20 +12,26 @@
 #include "KHttpHelper.h"
 #include "KTools.h"
 #include "KLog.h"
+#include "KList.h"
 #include "KylinTypes.h"
 
 #define HTTP_CREATED 201
 #define HTTP_PARTIAL_CONTENT 206
 
+#define KHTTP_WORKER_FLAG_QUITTING make_flag(0)
+
 typedef struct KHttpWorker {
+    volatile uint64_t flag;
     pthread_t thread;
     struct event_base *base;
     struct evdns_base *dnsbase;
-    //pthread_mutex_t baseLock;
-    pthread_cond_t cond;
+    pthread_mutex_t taskListLock;
+    sem_t taskListSem;
+    KList taskList;
 } KHttpWorker_t;
 
 struct KHttpHelperRequestTask {
+    KListNode listNode;
     struct evhttp_connection *cn ;
     struct evhttp_uri *uri;
     struct evhttp_request *req;
@@ -87,21 +94,6 @@ static int khttpHelperTaskInit(KHttpHelperRequestTask_t *task,
         task->buffer = evbuffer_new();
     }
 
-    int port = evhttp_uri_get_port(task->uri);
-    if (port == -1) {
-        port = 80;
-    }
-
-    const char *host = evhttp_uri_get_host(task->uri);
-    task->cn = NULL;
-    //pthread_mutex_lock(&worker->baseLock);
-    task->cn = evhttp_connection_base_new(worker->base,
-                                          worker->dnsbase,
-                                          host,
-                                          port);
-
-    //pthread_mutex_unlock(&worker->baseLock);
-
     task->req = NULL;
 
     const char *query = evhttp_uri_get_query(task->uri);
@@ -118,12 +110,8 @@ static int khttpHelperTaskInit(KHttpHelperRequestTask_t *task,
         }
     }
 
-    //KLogDebug("Init a task, url :[%s] host :[%s] port:[%hu] pathQuery :[%s]",
-    //          url,host,port,task->pathQuery);
-
     task->req = evhttp_request_new(httpHelperGetDataHandler,task);
 
-    evhttp_add_header(evhttp_request_get_output_headers(task->req),"Host",host);
 
     evhttp_add_header(evhttp_request_get_output_headers(task->req),
                       "Connection","keep-alive");
@@ -133,39 +121,85 @@ static int khttpHelperTaskInit(KHttpHelperRequestTask_t *task,
 
 static int khttpHelperTaskRun(KHttpHelperRequestTask_t *task,
                               enum evhttp_cmd_type cmdType) {
-    const char *requestStr = "/";
-    if (task->pathQuery) {
-        requestStr = task->pathQuery;
-    }
-
     task->cmdType = cmdType;
 
-    evhttp_make_request(task->cn,task->req,cmdType,requestStr);
+    KHttpWorker_t *pWorker = task->worker;
+
+    pthread_mutex_lock(&pWorker->taskListLock);
+    KListAddHead(&pWorker->taskList,&task->listNode);
+    sem_post(&pWorker->taskListSem);
+
+    pthread_mutex_unlock(&pWorker->taskListLock);
     return KE_OK;
 }
 
+
 static void *httpWorkerFunc(void *param) {
-    KHttpWorker_t *pworker = (KHttpWorker_t *)param;
+    KHttpWorker_t *pWorker = (KHttpWorker_t *)param;
+
     KLogInfo("KHttpHelper Running...");
-    event_base_dispatch(pworker->base);
+    while(!CheckFlag(pWorker->flag,KHTTP_WORKER_FLAG_QUITTING)) {
+        KLogDebug("KHttpHelper Waiting...");
+        if(sem_wait(&pWorker->taskListSem) != 0) {
+            break;
+        }
+        KLogDebug("HttpHelper dealing...");
+        pthread_mutex_lock(&pWorker->taskListLock);
+
+        if (KListEmpty(&pWorker->taskList)) {
+            KLogDebug("HttpHelper TaskList Empty...");
+            pthread_mutex_unlock(&pWorker->taskListLock);
+            continue;
+        }
+
+        while(KListEmpty(&pWorker->taskList)) {
+
+            KLogDebug("HttpHelper Read a Task...");
+            KListNode *taskNode = KListTail(&pWorker->taskList);
+            KListDel(taskNode);
+            KHttpHelperRequestTask_t *task =
+                KListEntry(taskNode,KHttpHelperRequestTask_t,listNode);
+
+            int port = evhttp_uri_get_port(task->uri);
+            if (port == -1) {
+                port = 80;
+            }
+            const char *host = evhttp_uri_get_host(task->uri);
+            task->cn = NULL;
+            task->cn = evhttp_connection_base_new(task->worker->base,
+                                                  task->worker->dnsbase,
+                                                  host,
+                                                  port);
+            evhttp_add_header(evhttp_request_get_output_headers(task->req),
+                              "Host",
+                              host);
+
+            const char *requestStr = "/";
+            if (task->pathQuery) {
+                requestStr = task->pathQuery;
+            }
+
+            evhttp_make_request(task->cn,task->req,task->cmdType,requestStr);
+        }
+        pthread_mutex_unlock(&pWorker->taskListLock);
+
+        event_base_dispatch(pWorker->base);
+        KLogInfo("HttpHelper finish dealing...");
+    }
+
     KLogInfo("KHttpHelper Quiting...");
     return NULL;
 }
 
-void httpWorkerTimeoutHandler(evutil_socket_t fd, short what, void *arg) {
-
-}
-
-
-void httpWorkerAddTimer(struct event_base *base,uint64_t time)
-{
-    struct timeval one_sec = { time, 0 };
-    struct event *ev;
-    /* We're going to set up a repeating timer to get called called 100
-       times. */
-    ev = event_new(base, -1, EV_PERSIST, httpWorkerTimeoutHandler, NULL);
-    event_add(ev, &one_sec);
-}
+/* void httpWorkerAddTimer(struct event_base *base,uint64_t time) */
+/* { */
+/*     struct timeval one_sec = { time, 0 }; */
+/*     struct event *ev; */
+/*     /\* We're going to set up a repeating timer to get called called 100 */
+/*        times. *\/ */
+/*     ev = event_new(base, -1, EV_PERSIST, httpWorkerTimeoutHandler, NULL); */
+/*     event_add(ev, &one_sec); */
+/* } */
 
 
 KHttpHelper_t *KCreateHttpHelper(uint32_t workerCount) {
@@ -176,11 +210,17 @@ KHttpHelper_t *KCreateHttpHelper(uint32_t workerCount) {
     uint32_t i = 0;
     for (i = 0; i != workerCount; i++) {
         KHttpWorker_t *pWorker = &helper->workerList[i];
+        pWorker->flag = 0;
         pWorker->base = event_base_new();
-        pWorker->dnsbase = evdns_base_new(pWorker->base,1);
-        //pthread_mutex_init(&pWorker->baseLock,NULL);
+        KListInit(&pWorker->taskList);
 
-        httpWorkerAddTimer(pWorker->base,1);
+        pthread_mutexattr_t mutexAttr;
+        pthread_mutexattr_init(&mutexAttr);
+        pthread_mutexattr_settype(&mutexAttr,PTHREAD_MUTEX_RECURSIVE);
+        pthread_mutex_init(&pWorker->taskListLock,&mutexAttr);
+
+        //pthread_mutex_init(&pWorker->taskListLock,NULL);
+        pWorker->dnsbase = evdns_base_new(pWorker->base,1);
         pthread_create(&pWorker->thread,
                        NULL,
                        httpWorkerFunc,
@@ -195,9 +235,14 @@ void KDestoryHttpHelper(KHttpHelper_t *helper) {
     size_t i = 0;
     if (helper->workerList) {
         for (i = 0; i != helper->workerCount ;i++) {
-            event_base_loopexit(helper->workerList[i].base,NULL);
-            event_base_free(helper->workerList[i].base);
-            evdns_base_free(helper->workerList[i].dnsbase,1);
+            KHttpWorker_t *pWorker = &helper->workerList[i];
+            SetFlag(pWorker->flag,KHTTP_WORKER_FLAG_QUITTING);
+            __sync_synchronize();
+            event_base_loopexit(pWorker->base,NULL);
+            event_base_free(pWorker->base);
+            evdns_base_free(pWorker->dnsbase,1);
+
+            pthread_mutex_destroy(&pWorker->taskListLock);
         }
         for (i = 0; i != helper->workerCount ;i++) {
             pthread_join(helper->workerList[i].thread,NULL);
@@ -237,7 +282,6 @@ static void httpHelperGetDataHandler(struct evhttp_request *req,void *arg) {
         task->handler(task,task->userParam);
     }
 
-
     int responseCode = evhttp_request_get_response_code(req);
     switch(responseCode)
     {
@@ -245,12 +289,14 @@ static void httpHelperGetDataHandler(struct evhttp_request *req,void *arg) {
     case HTTP_OK:
     case HTTP_NOCONTENT:
     case HTTP_PARTIAL_CONTENT:
+        KLogDebug("Got 2** response");
         evbuffer_add_buffer(task->buffer,evhttp_request_get_input_buffer(req));
         task->handler(task,task->userParam);
         break;
     case HTTP_CREATED :
     case HTTP_MOVEPERM:
     case HTTP_MOVETEMP:
+        KLogDebug("Got 3** response");
         newLocation = evhttp_find_header(evhttp_request_get_input_headers(req),
                                                      "Location");
         if (!newLocation) {
@@ -274,6 +320,7 @@ static void httpHelperGetDataHandler(struct evhttp_request *req,void *arg) {
             task->handler(task,task->userParam);
             goto FINISH;
         }
+        break;
     default:
         //unknow error
         KLogErr("Send request failed...ResponseCode : [%d]",responseCode);
@@ -354,7 +401,12 @@ int KHttpHelperRequest(KHttpHelper_t *helper,
     KHttpHelperRequestTask_t *task = ObjAlloc(KHttpHelperRequestTask_t);
 
     InitThrow();
-    Try(khttpHelperTaskInit(task,worker,url,handler));
+
+    int reval = khttpHelperTaskInit(task,worker,url,handler);
+    if (reval < 0) {
+        return reval;
+    }
+
     task->userParam = userParam;
     Try(khttpHelperTaskRun(task,EVHTTP_REQ_GET));
 
@@ -371,7 +423,12 @@ int KHttpHelperRequestHead(KHttpHelper_t *helper,
     KHttpHelperRequestTask_t *task = ObjAlloc(KHttpHelperRequestTask_t);
 
     InitThrow();
-    Try(khttpHelperTaskInit(task,worker,url,handler));
+
+    int reval = khttpHelperTaskInit(task,worker,url,handler);
+    if (reval < 0) {
+        return reval;
+    }
+
     task->userParam = userParam;
     Try(khttpHelperTaskRun(task,EVHTTP_REQ_HEAD));
 
@@ -390,7 +447,12 @@ int KHttpHelperRequestRange(KHttpHelper_t *helper,
     KHttpHelperRequestTask_t *task = ObjAlloc(KHttpHelperRequestTask_t);
 
     InitThrow();
-    Try(khttpHelperTaskInit(task,worker,url,handler));
+
+    int reval = khttpHelperTaskInit(task,worker,url,handler);
+    if (reval < 0) {
+        return reval;
+    }
+
     task->userParam = userParam;
 
     char rangeStr[256];

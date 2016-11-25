@@ -23,15 +23,23 @@ void testKHttpHelperGetDataHandler(KHttpHelperRequestTask_t *task,void *param) {
     cout<<" Content Length : "<<contentLen;
 
     int *testval = (int *)param;
+    __sync_fetch_and_sub(testval,1);
     cout<<" testval :"<<*testval<<endl;
 }
 
 TEST(KHttpHelper,base) {
-    KHttpHelper_t *helper = KCreateHttpHelper(10);
+    KHttpHelper_t *helper = KCreateHttpHelper(1);
     int *testval = new int;
-    *testval = 100;
+    *testval = 0;
 
-    for(int i = 0 ; i != GetKB(100); ++i) {
+    for(int i = 0 ; i != 1; ++i) {
+        int curTestVal = __sync_fetch_and_add(testval,1);
+        if (curTestVal > 200) {
+            cout<<".";
+            sched_yield();
+            continue;
+        }
+
         KHttpHelperRequestRange(helper,
                                 "http://localhost/testfile",
                                 i * 80,
@@ -40,7 +48,7 @@ TEST(KHttpHelper,base) {
                                 testval);
     }
 
-    sleep(10000);
+    sleep(1000);
 
     KDestoryHttpHelper(helper);
 }
