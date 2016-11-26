@@ -112,7 +112,6 @@ static int khttpHelperTaskInit(KHttpHelperRequestTask_t *task,
 
     task->req = evhttp_request_new(httpHelperGetDataHandler,task);
 
-
     evhttp_add_header(evhttp_request_get_output_headers(task->req),
                       "Connection","keep-alive");
 
