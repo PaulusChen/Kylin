@@ -45,6 +45,7 @@ typedef enum {
     KE_3RD_PART_LIBS_ERROR = -12,
     KE_NO_MEMORY = -13,
     KE_TIMEOUT = -14,
+    KE_AGAIN = -15,
     KE_MAX_ERROR_CODE
 } KErrorCode;
 

@@ -15,6 +15,13 @@ const char *KGetErrStr(int errval) {
     return KErrorString[errval * -1];
 }
 
+uint64_t bswap64 (uint64_t x)
+{
+    x = ((x << 8) & 0xFF00FF00FF00FF00ULL) | ((x >> 8) & 0x00FF00FF00FF00FFULL);
+    x = ((x << 16) & 0xFFFF0000FFFF0000ULL) | ((x >> 16) & 0x0000FFFF0000FFFFULL);
+    return (x >> 32) | (x << 32);
+}
+
 int bitMapCheck(const uint8_t *bitmap,size_t beg,size_t *len) {
     assert(bitmap);
     assert(len);

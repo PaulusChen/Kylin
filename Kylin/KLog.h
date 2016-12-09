@@ -9,9 +9,8 @@
 extern "C" {
 #endif
 
-void KLogInit(const char *progName);
-
-void KLog(bool pe,uint32_t type,const char *format,...);
+    void KLogInit(const char *progName);
+    void KLog(bool pe,uint32_t type,const char *func,const char *format,...);
 
 #ifdef __cplusplus
 } //extern "C"
@@ -19,34 +18,34 @@ void KLog(bool pe,uint32_t type,const char *format,...);
 
 
 #define KLogDebug(fmt,args...)                   \
-    KLog(false,LOG_DEBUG,fmt,##args)
+    KLog(false,LOG_DEBUG,__FUNCTION__,fmt,##args)
 
 #define KLogInfo(fmt,args...)                    \
-    KLog(false,LOG_INFO,fmt,##args)
+    KLog(false,LOG_INFO,__FUNCTION__,fmt,##args)
 
 #define KLogNotice(fmt,args...)                  \
-    KLog(false,LOG_NOTICE,fmt,##args)
+    KLog(false,LOG_NOTICE,__FUNCTION__,fmt,##args)
 
 #define KLogWarning(fmt,args...)                 \
-    KLog(false,LOG_WARNING,fmt,##args)
+    KLog(false,LOG_WARNING,__FUNCTION__,fmt,##args)
 
 #define KLogErr(fmt,args...)                     \
-    KLog(false,LOG_ERR,fmt,##args)
+    KLog(false,LOG_ERR,__FUNCTION__,fmt,##args)
 
 #define KLogDebugErrno(fmt,args...)              \
-    KLog(true,LOG_DEBUG,fmt,##args)
+    KLog(true,LOG_DEBUG,__FUNCTION__,fmt,##args)
 
 #define KLogInfoErrno(fmt,args...)               \
-    KLog(true,LOG_INFO,fmt,##args)
+    KLog(true,LOG_INFO,__FUNCTION__,fmt,##args)
 
 #define KLogNoticeErrno(fmt,args...)             \
-    KLog(true,LOG_NOTICE,fmt,##args)
+    KLog(true,LOG_NOTICE,__FUNCTION__,fmt,##args)
 
 #define KLogWarningErrno(fmt,args...)            \
-    KLog(true,LOG_WARNING,fmt,##args)
+    KLog(true,LOG_WARNING,__FUNCTION__,fmt,##args)
 
 #define KLogErrErrno(fmt,args...)                \
-    KLog(true,LOG_ERR,fmt,##args)
+    KLog(true,LOG_ERR,__FUNCTION__,fmt,##args)
 
 
 #define VLOG_OPEN_LOG_BLOCK 1

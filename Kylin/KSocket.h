@@ -7,6 +7,10 @@
 struct KSocket;
 typedef struct KSocket KSocket_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 KSocket_t *CreateKSocket();
 
 void DestoryKSocket(KSocket_t *trans);
@@ -22,6 +26,10 @@ int KSocketRead(KSocket_t *trans,
 int KSocketWrite(KSocket_t *trans,
                  const uint8_t *buf,
                  uint64_t len);
+
+#ifdef __cplusplus
+} //extern "C"
+#endif
 
 #endif /* __KTRANSFER_H__ */
 

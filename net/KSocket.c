@@ -108,7 +108,7 @@ int KSocketConnect(KSocket_t *trans,const char *ip,uint16_t port) {
         KLogErrErrno("Failed socket creating.");
         return KE_SYS_OBJ_CREATE_FAILED;
     }
-    fcntl(fd, F_SETFL, O_NONBLOCK | fcntl(fd, F_GETFL, 0));
+    //fcntl(fd, F_SETFL, O_NONBLOCK | fcntl(fd, F_GETFL, 0));
 
     int optval = 1;
     if (setsockopt(fd,
@@ -162,7 +162,7 @@ KSocket_t *KSocketAccept(KSocket_t *trans) {
 }
 
 int KSocketClose(KSocket_t *trans) {
-    if(close(trans->fd) == 0) {
+    if(close(trans->fd) != 0) {
         KLogErrErrno("Close socket failed fd:[%"PRIu32"]. ",trans->fd);
         return KE_SYS_OPT_FAILED;
     }
@@ -180,9 +180,7 @@ int KSocketRead(KSocket_t *trans,
 
     if (reval < 0) {
         if (errno == EAGAIN || errno == EINTR) {
-            sleep(1);
-
-            reval = recv(trans->fd,(char *)buf,len,0);
+            return KE_AGAIN;
         }
     }
 
@@ -209,7 +207,7 @@ int KSocketWrite(KSocket_t *trans,
         }
     }
 
-    if (reval <= 0 )
+    if (reval < 0 )
     {
         KLogErrErrno("Send socket error. ");
         return KE_SYS_OPT_FAILED;
