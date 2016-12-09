@@ -43,7 +43,7 @@ add_definitions("-Wno-unused-result -Wsign-compare -fwrapv -g -Wall -DDEBUG")
 
 add_library(kylin ${CODE_FILE})
 
-add_executable(kylin_testing ${TESTING_CODE_FILE})
-
 set(PUB_LIBRARIES libgtest.a pthread dl util m event)
-target_link_libraries(kylin_testing kylin ${PUB_LIBRARIES})
+
+#add_executable(kylin_testing ${TESTING_CODE_FILE})
+#target_link_libraries(kylin_testing kylin ${PUB_LIBRARIES})

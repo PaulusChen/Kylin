@@ -123,6 +123,8 @@ const char *KGetErrStr(KErrorCode errval);
          KLockerGuardName(name)++ == 0;         \
          pthread_mutex_unlock(locker))
 
+#define KLockerRet(locker) pthread_mutex_unlock(locker)
+
 #define likely(x) __builtin_expect(!!(x),1)
 
 #define unlikely(x) __builtin_expect(!!(x),0)

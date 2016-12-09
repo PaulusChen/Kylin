@@ -5,6 +5,8 @@
 #include "KTools.h"
 #include "KLog.h"
 
+#ifdef KLOG_DEFAULT_IMPLEMENT
+
 void KLogInit(const char *progName) {
     openlog(progName,LOG_PERROR|LOG_PID,LOG_DAEMON);
 }
@@ -28,3 +30,4 @@ void KLogClose() {
     closelog();
 }
 
+#endif
