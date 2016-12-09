@@ -9,8 +9,11 @@
 extern "C" {
 #endif
 
-    void KLogInit(const char *progName);
-    void KLog(bool pe,uint32_t type,const char *func,const char *format,...);
+    extern void KLogInit(const char *progName);
+
+    extern void KLog(bool pe,uint32_t type,const char *func,const char *format,...);
+
+    extern void KKLogClose();
 
 #ifdef __cplusplus
 } //extern "C"
@@ -79,8 +82,5 @@ extern "C" {
     if (false)
 
 #endif
-
-void KKLogClose();
-
 
 #endif

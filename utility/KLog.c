@@ -5,6 +5,8 @@
 #include "KTools.h"
 #include "KLog.h"
 
+#ifdef KLOG_DEFAULT_IMPLEMENT
+
 void KLogInit(const char *progName) {
     openlog(progName,LOG_PERROR|LOG_PID,LOG_DAEMON);
 }
@@ -17,9 +19,9 @@ void KLog(bool pe,uint32_t type,const char *func,const char *format,...) {
 
     if (pe) {
         int err = errno;
-        syslog(type,"[%s]: %s Errno : [%d] %s",func,errBuf,err,strerror(err));
+        syslog(type,"(%s)> %s Errno : [%d] %s",func,errBuf,err,strerror(err));
     } else {
-        syslog(type,"[%s]: %s",func,errBuf);
+        syslog(type,"(%s)> %s",func,errBuf);
     }
 
     va_end(arg_ptr);
@@ -29,3 +31,4 @@ void KLogClose() {
     closelog();
 }
 
+#endif
