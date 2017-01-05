@@ -52,6 +52,8 @@ TEST(KHASH_TABLE,AddAndBasic) {
     key = 0x87654321;
     p = KHashTable(KHT,Search)(&htable,&key);
     ASSERT_EQ(NULL,p);
+
+    KHashTable(KHT,Destory)(&htable,NULL,NULL);
 }
 
 void *gdslGetKey(void *test) {
@@ -61,8 +63,6 @@ void *gdslGetKey(void *test) {
 ulong gdslHash(void *key) {
     return *(ulong *)key;
 }
-
-
 
 TEST(KHASH_TABLE,AddAndRemoveCorrectness) {
 

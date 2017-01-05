@@ -242,6 +242,7 @@ TEST_F(KRbTreeTest,KRbNodeInsertRemoveSearchTest) {
     KRbDelete(&root,searchNode);
 
     DisplayKRbTree(root.node);
+    KRbClearTree(&root,NULL,NULL);
 }
 
 #define RBTREE_RANDOM_TEST_TIMES (1<<24)

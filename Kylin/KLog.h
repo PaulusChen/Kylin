@@ -67,6 +67,18 @@ extern "C" {
 #define KLogBlockWarning()                       \
     if (true)
 
+#define KLogBlockDebugIf(cond)                  \
+    if (true && cond)                           \
+
+#define KLogBlockInfoIf(cond)                   \
+    if (true && cond)                           \
+
+#define KLogBlockNoticeIf(cond)                 \
+    if (true && cond)                           \
+
+#define KLogBlockWarningIf(cond)                \
+    if (true && cond)                           \
+
 #else
 
 #define KLogBlockDebug()                         \
@@ -80,6 +92,18 @@ extern "C" {
 
 #define KLogBlockWarning()                       \
     if (false)
+
+#define KLogBlockDebugIf(cond)                  \
+    if (false && cond)                           \
+
+#define KLogBlockInfoIf(cond)                   \
+    if (false && cond)                           \
+
+#define KLogBlockNoticeIf(cond)                 \
+    if (false && cond)                           \
+
+#define KLogBlockWarningIf(cond)                \
+    if (false && cond)                           \
 
 #endif
 
