@@ -129,7 +129,7 @@ int KSocketConnect(KSocket_t *trans,const char *ip,uint16_t port) {
     int result = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
     if (result == -1  &&  errno != EINPROGRESS)
     {
-        KLogErrErrno("Connect to host failed, [%s:hu]",ip,port);
+        KLogErrErrno("Connect to host failed, [%s:%hu]",ip,port);
         KSocketClose(trans);
         return KE_SYS_OPT_FAILED;
     }

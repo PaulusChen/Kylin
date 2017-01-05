@@ -169,8 +169,7 @@ static inline uint64_t PerfToolsTimerSpan(PerfToolsTimer *timer) {
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-    uint64_t bswap64 (uint64_t x);
+    uint64_t swapByteOrder64 (uint64_t x);
     uint8_t contSignFromLowBit(uint64_t bitmap);
     int bitMapCheck(const uint8_t *bitmap,size_t beg,size_t *len);
     int bitMapSet(uint8_t *bitmap,size_t beg,size_t len);
